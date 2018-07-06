@@ -30,7 +30,7 @@ def main(sfile, sz):
         os.makedirs(out)
     print("making mazes ...")
 
-    pool_size = 48
+    pool_size = 192
     pool = Pool(pool_size)
     for file in os.listdir("split/"):
         pool.apply_async(makeMazes, (file, out))

@@ -1,5 +1,14 @@
-out/**
+out/*png
 mz/split/*.png
 mz/*.png
+live_cv/*.png
+live_mz/*.png
+solved/*.png
+mz_tiled/*.png
 strips/*.png
 split/*.png
+masks/*.png
+laby/*.png
+img/*.png
+out/**
+*.png
