@@ -20,7 +20,6 @@ def makeMaze(img_path, folder):
     grid.to_png(cell_size=4, folder=folder, name=label)
     return
 
-
 def main(img_path, folder):
     makeMaze(img_path, "live_mz")
     return
