@@ -5,9 +5,9 @@ import numpy as np
 
 
 def save(lab, img):
-    if not os.path.exists("mz/split/"):
-        os.makedirs("mz/split/")
-    cv2.imwrite(('mz/split/%s.png' % lab), img)
+    if not os.path.exists("split/"):
+        os.makedirs("split/")
+    cv2.imwrite(('split/%s.png' % lab), img)
     return
 
 
@@ -15,9 +15,9 @@ def split(img, sz):
     height, width = img.shape
     for x in range(width // sz):
         for y in range(height // sz):
-            print("x:%s, x+sz:%s" % (x * sz, x * sz + sz))
-            print("y:%s, y+sz:%s" % (y * sz, y * sz + sz))
-            print("---")
+            # print("x:%s, x+sz:%s" % (x * sz, x * sz + sz))
+            # print("y:%s, y+sz:%s" % (y * sz, y * sz + sz))
+            # print("---")
             img_seg = img[y * sz:y * sz + sz, x * sz:x * sz + sz]
             lab = "x%s_y%s" % (x, y)
             save(lab, img_seg)

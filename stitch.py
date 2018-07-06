@@ -16,7 +16,7 @@ def main(folder):
     pos = {}
     x_lim = 0
     y_lim = 0
-    for file in os.listdir("mz/split/"):
+    for file in os.listdir("split/"):
         x, y = parse_name(file)
         if x > x_lim:
             x_lim = x
@@ -30,7 +30,7 @@ def main(folder):
             # print(pos[(x, y)])
             if y == 0:
                 if x > 0:
-                    cv2.imwrite('mz/strips/out_%s_%s.png' % (x, y), vis)
+                    cv2.imwrite('strips/out_%s_%s.png' % (x, y), vis)
                 vis = cv2.imread('mz/%s' % pos[(x, y)])
                 # the first image
             else:
@@ -40,19 +40,21 @@ def main(folder):
 
     strips = {}
     co = 0
-    for file in os.listdir("mz/strips/"):
+    for file in os.listdir("strips/"):
         num = file[4:-6]
         strips[num] = file
         co += 1
 
     for x in range(co):
         y = "%s" % (x+1)
-        print(strips[y])
-        if x ==0:
-            vis = cv2.imread('mz/strips/%s' % strips[y])
+        # print(strips[y])
+        if x == 0:
+            vis = cv2.imread('strips/%s' % strips[y])
+        # elif y == '63':
+        #     pass
         else: 
-            imgb = cv2.imread('mz/strips/%s' % strips[y])
+            imgb = cv2.imread('strips/%s' % strips[y])
             vis = np.concatenate((vis, imgb), axis=1)
-    cv2.imwrite('mz/mz_tiled/out_%s.png' % (y), vis)
+    cv2.imwrite('mz_tiled/out_.png', vis)
 
-main("mz/")
+# main("mz/")

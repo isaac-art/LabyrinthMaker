@@ -15,9 +15,10 @@ def getneighbour(n):
     return [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]
 
 
-def makemaze(start, end, thresh_pix):
+def makemaze(start, end, thresh_pix, thresh_img):
     queue = Queue()
     queue.put([start])
+    c = 0
     while not queue.empty():
         path = queue.get()
         pixel = path[-1]
@@ -34,6 +35,15 @@ def makemaze(start, end, thresh_pix):
                     new_path.append(neighbour)
                     queue.put(new_path)
 
+        for position in path:
+            x, y = position
+            thresh_pix[x, y] = (255, 0, 0)
+            # save maze image
+            thresh_img.save("solve/o_%s.png" % c)
+
+        c += 1
+
+
     return path
 
 
@@ -45,9 +55,9 @@ if __name__ == '__main__':
     thresh_pix = thresh_img.load()
     # make the path
     width, height = thresh_img.size
-    start = (27, 28)
-    end = (1178, 826)
-    path = makemaze(start, end, thresh_pix)
+    start = (5, 8)
+    end = (73, 38)
+    path = makemaze(start, end, thresh_pix, thresh_img)
     # load the color image
     out_img = Image.open(sys.argv[2])
     out_pix = out_img.load()

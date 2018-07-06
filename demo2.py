@@ -1,5 +1,6 @@
 import os
 import sys
+import stitch
 import split
 from Mask import Mask
 from MaskedGrid import MaskedGrid
@@ -12,14 +13,18 @@ from RecursiveBacktracker import RecursiveBacktracker
 # "off"
 sfile = sys.argv[1]
 # op = sys.argv[2] 
-sz = 25
+sz = int(sys.argv[2])
 
+
+print("splitting image ...")
 split.main(sfile, sz)
+print("splits saved!")
 
 out = "mz/"
 if not os.path.exists(out):
     os.makedirs(out)
 
+print("making mazes ...")
 for file in os.listdir("split/"):
     fl = "split/%s" % file
     mask = Mask.from_png(fl)
@@ -29,7 +34,11 @@ for file in os.listdir("split/"):
     # rb = "out/recursivebacktracker/%s" % loc
     img3 = grid.to_png(cell_size=2, folder=out, name=loc)
 
+print("mazes complete!")
 
+print("stitching segments ...")
+stitch.main("mz/")
+print("stitching complete!")
 
 
 # if op == "on":
