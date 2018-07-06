@@ -97,13 +97,28 @@ class Grid():
             y2 = (cell.row + 1) * cell_size
 
             if not cell.north:
-                draw.line((x1, y1, x2, y1), fill=wall, width=1)
+                draw.line((x1, y1, x2, y1), fill=wall, width=int(cell_size/4))
             if not cell.west:
-                draw.line((x1, y1, x1, y2), fill=wall, width=1)
+                draw.line((x1, y1, x1, y2), fill=wall, width=int(cell_size/4))
             if not cell.is_linked(cell.east):
-                draw.line((x2, y1, x2, y2), fill=wall, width=1)
+                draw.line((x2, y1, x2, y2), fill=wall, width=int(cell_size/4))
             if not cell.is_linked(cell.south):
-                draw.line((x1, y2, x2, y2), fill=wall, width=1)
+                draw.line((x1, y2, x2, y2), fill=wall, width=int(cell_size/4))
+
+            half_cell = cell_size / 2
+            if cell.is_linked(cell.east):
+                draw.line((x1 + half_cell, y1 + half_cell, x2 + half_cell, y1 + half_cell), fill=wall, width=int(cell_size/4))
+            if cell.is_linked(cell.south):
+                draw.line((x1 + half_cell, y1 + half_cell, x1 + half_cell, y2 + half_cell), fill=wall, width=int(cell_size/4))
+            # Originally:
+            # if not cell.north:
+            #     draw.line((x1, y1, x2, y1), fill=wall, width=1)
+            # if not cell.west:
+            #     draw.line((x1, y1, x1, y2), fill=wall, width=1)
+            # if not cell.is_linked(cell.east):
+            #     draw.line((x2, y1, x2, y2), fill=wall, width=1)
+            # if not cell.is_linked(cell.south):
+            #     draw.line((x1, y2, x2, y2), fill=wall, width=1)
 
         if not os.path.exists(folder):
             os.makedirs(folder)

@@ -32,7 +32,7 @@ for file in os.listdir("split/"):
     loc = file[:-4]
     RecursiveBacktracker.on(grid)
     # rb = "out/recursivebacktracker/%s" % loc
-    img3 = grid.to_png(cell_size=2, folder=out, name=loc)
+    img3 = grid.to_png(cell_size=4, folder=out, name=loc)
 
 print("mazes complete!")
 

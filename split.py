@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import cv2
 import numpy as np
@@ -41,7 +42,22 @@ def load(img_name):
     return col, bw
 
 
+def removeFiles(folder):
+    for file in os.listdir(folder):
+        filepath = os.path.join(folder, file)
+        try:
+            if os.path.isfile(filepath):
+                os.unlink(filepath)
+        except Exception as e:
+            print(e)
+            pass
+    return
+
+
 def main(img_name, sz):
+    removeFiles("strips/")
+    removeFiles("split/")
+    removeFiles("mz/")
     col, bw = load(img_name)
     thr = threshold(bw)
     split(thr, sz)
