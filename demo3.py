@@ -19,7 +19,7 @@ sz = int(sys.argv[2])
 # split.main(sfile, sz)
 # print("splits saved!")
 
-out = "laby_t/"
+out = "laby/"
 if not os.path.exists(out):
     os.makedirs(out)
 
@@ -33,7 +33,7 @@ RecursiveBacktracker.on(grid)
 # rb = "out/recursivebacktracker/%s" % loc
 img3 = grid.to_png(cell_size=4, folder=out, name=loc)
 
-print("mazes complete!")
+print("maze complete!")
 
 # print("stitching segments ...")
 # stitch.main("mz/")

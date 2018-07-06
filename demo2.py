@@ -9,7 +9,7 @@ from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
-# invoke: $ python demo2.py "image.png" 100
+# invoke: $ python demo2.py "image.png" 80
 # "off"
 sfile = sys.argv[1]
 # op = sys.argv[2] 
@@ -32,7 +32,7 @@ for file in os.listdir("split/"):
     loc = file[:-4]
     RecursiveBacktracker.on(grid)
     # rb = "out/recursivebacktracker/%s" % loc
-    img3 = grid.to_png(cell_size=4, folder=out, name=loc)
+    img3 = grid.to_png(cell_size=8, folder=out, name=loc)
 
 print("mazes complete!")
 

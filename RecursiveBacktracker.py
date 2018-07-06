@@ -11,6 +11,7 @@ class RecursiveBacktracker():
 
         while len(stack) > 0:
             current = stack[-1]
+            # add cell check for masking
             if isinstance(current, Cell):
                 # print(current)
                 neighs = []

@@ -100,6 +100,7 @@ class Grid():
                 draw.line((x1, y1, x2, y1), fill=wall, width=int(cell_size/4))
             if not cell.west:
                 draw.line((x1, y1, x1, y2), fill=wall, width=int(cell_size/4))
+
             if not cell.is_linked(cell.east):
                 draw.line((x2, y1, x2, y2), fill=wall, width=int(cell_size/4))
             if not cell.is_linked(cell.south):
