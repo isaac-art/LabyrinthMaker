@@ -82,46 +82,115 @@ class Grid():
             output += bottom + "\n"
         print(output)
 
-    def to_png(self, cell_size=10, folder="out", name="nm"):
+    def to_png(self, cell_size=10, folder="out", name="nm", save=True):
         img_wid = cell_size * self.columns
         img_hei = cell_size * self.rows
         bg = (255, 255, 255)
-        wall = (0, 0, 0)
+        wall = (240, 20, 24)
         img = Image.new("RGBA", (img_wid + 1, img_hei + 1), bg)
         draw = ImageDraw.Draw(img)
+
+        # for cell in self.each_cell():
+        #     x1 = cell.column * cell_size
+        #     y1 = cell.row * cell_size
+        #     x2 = (cell.column + 1) * cell_size
+        #     y2 = (cell.row + 1) * cell_size
+        #     box = cell.colour
+        #     draw.rectangle([(x1, y1), (x2, y2)], fill=box)
 
         for cell in self.each_cell():
             x1 = cell.column * cell_size
             y1 = cell.row * cell_size
             x2 = (cell.column + 1) * cell_size
             y2 = (cell.row + 1) * cell_size
+            half_cell = cell_size / 2
+
+            if cell.row == 0 and cell.column == 0:
+                if cell.is_linked(cell.south):
+                    draw.line((x1+half_cell,y1,x1+half_cell,y2), fill=wall, width=int(cell_size/4))
+                else:
+                    draw.line((x1,y1+half_cell,x2,y1+half_cell), fill=wall, width=int(cell_size/4))
 
             if not cell.north:
                 draw.line((x1, y1, x2, y1), fill=wall, width=int(cell_size/4))
             if not cell.west:
                 draw.line((x1, y1, x1, y2), fill=wall, width=int(cell_size/4))
-
             if not cell.is_linked(cell.east):
                 draw.line((x2, y1, x2, y2), fill=wall, width=int(cell_size/4))
             if not cell.is_linked(cell.south):
                 draw.line((x1, y2, x2, y2), fill=wall, width=int(cell_size/4))
 
-            half_cell = cell_size / 2
             if cell.is_linked(cell.east):
                 draw.line((x1 + half_cell, y1 + half_cell, x2 + half_cell, y1 + half_cell), fill=wall, width=int(cell_size/4))
             if cell.is_linked(cell.south):
                 draw.line((x1 + half_cell, y1 + half_cell, x1 + half_cell, y2 + half_cell), fill=wall, width=int(cell_size/4))
-            # Originally:
-            # if not cell.north:
-            #     draw.line((x1, y1, x2, y1), fill=wall, width=1)
-            # if not cell.west:
-            #     draw.line((x1, y1, x1, y2), fill=wall, width=1)
-            # if not cell.is_linked(cell.east):
-            #     draw.line((x2, y1, x2, y2), fill=wall, width=1)
-            # if not cell.is_linked(cell.south):
-            #     draw.line((x1, y2, x2, y2), fill=wall, width=1)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        if save:
+            img.save("{}/{}.png".format(folder, name), "PNG", optimize=True)
+        return img
+
+
+    def to_png_inset(self, cell_size=8, inset=0.25, folder="out", name="nm", save=True):
+        img_wid = cell_size * self.columns
+        img_hei = cell_size * self.rows
+        inset = cell_size * inset
+        bg = (255, 255, 255)
+        wall = (56, 50, 38)
+        img = Image.new("RGBA", (img_wid + 1, img_hei + 1), bg)
+        draw = ImageDraw.Draw(img)
+
+        for cell in self.each_cell():
+            x = cell.column * cell_size
+            y = cell.row * cell_size
+            x1 = x
+            x4 = x + cell_size
+            x2 = x1 + inset
+            x3 = x4 - inset
+            y1 = y
+            y4 = y + cell_size
+            y2 = y1 + inset
+            y3 = y4 - inset
+            quart_cell = cell_size / 4
+
+
+            if cell.row == 0 and cell.column == 0:
+                if cell.is_linked(cell.south):
+                    draw.line((x2+quart_cell,y2,x2+quart_cell,y3), fill=wall, width=1)
+                else:
+                    draw.line((x2,y2+quart_cell,x3,y2+quart_cell), fill=wall, width=1)
+
+            if cell.is_linked(cell.north):
+                draw.line((x2, y1, x2, y2), fill=wall, width=1)
+                draw.line((x3, y1, x3, y2), fill=wall, width=1)
+                draw.line((x2 + quart_cell, y1, x2 + quart_cell, y2 + quart_cell), fill=wall, width=1)
+            else:
+                draw.line((x2, y2, x3, y2), fill=wall, width=1)
+
+            if cell.is_linked(cell.south):
+                draw.line((x2, y3, x2, y4), fill=wall, width=1)
+                draw.line((x3, y3, x3, y4), fill=wall, width=1)
+                draw.line((x2 + quart_cell, y2 + quart_cell, x2 + quart_cell, y4), fill=wall, width=1)
+                
+            else:
+                draw.line((x2, y3, x3, y3), fill=wall, width=1)
+
+            if cell.is_linked(cell.west):
+                draw.line((x1, y2, x2, y2), fill=wall, width=1)
+                draw.line((x1, y3, x2, y3), fill=wall, width=1)
+                draw.line((x1, y2 + quart_cell, x2 + quart_cell, y2 + quart_cell), fill=wall, width=1)
+            else:
+                draw.line((x2, y2, x2, y3), fill=wall, width=1)
+
+            if cell.is_linked(cell.east):
+                draw.line((x3, y2, x4, y2), fill=wall, width=1)
+                draw.line((x3, y3, x4, y3), fill=wall, width=1)
+                draw.line((x2 + quart_cell, y2 + quart_cell, x4, y2 + quart_cell), fill=wall, width=1)
+            else:
+                draw.line((x3, y2, x3, y3), fill=wall, width=1)
 
         if not os.path.exists(folder):
             os.makedirs(folder)
-        img.save("{}/{}.png".format(folder, name), "PNG", optimize=True)
+        if save:
+            img.save("{}/{}.png".format(folder, name), "PNG", optimize=True)
         return img

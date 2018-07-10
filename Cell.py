@@ -8,6 +8,10 @@ class Cell():
         self.south = None
         self.east = None
         self.west = None
+        self.colour = (255, 255, 255)
+
+    def set_colour(self, col):
+        self.colour = col
 
     def link(self, cell, bidi=True):
         if not isinstance(cell, Cell):

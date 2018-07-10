@@ -1,6 +1,7 @@
 from random import choice
 from Grid import Grid
 
+
 class BinaryTree():
 
     def on(grid):
@@ -13,3 +14,4 @@ class BinaryTree():
             if len(nei) > 0:
                 neib = choice(nei)
                 cell.link(neib)
+

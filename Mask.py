@@ -44,6 +44,25 @@ class Mask():
                 a = False
                 return row, col
 
+    def from_img_data(img):
+        pix = img.load()
+        width, height = img.size
+        mask = Mask(height, width)
+
+        for r in range(1, mask.rows - 1):
+            for c in range(1, mask.columns - 1):
+                # print(pix[c,r])
+                # if (c, r) == (0, 0):
+                #     mask[r, c] = True
+                if pix[c, r] == (0, 0, 0, 255) or pix[c, r] == (0, 0, 0) or pix[c, r] == 0:
+                    # print("False")
+                    mask[r, c] = False
+                else:
+                    # print("True")
+                    mask[r, c] = True
+
+        return mask
+
     def from_png(file):
         img = Image.open(file)
         pix = img.load()
@@ -61,4 +80,5 @@ class Mask():
                 else:
                     # print("True")
                     mask[r, c] = True
+
         return mask

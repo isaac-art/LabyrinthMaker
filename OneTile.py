@@ -17,12 +17,12 @@ def makeMaze(img_path, folder):
     split_two = split[1].split(".")
     label = split_two[0]
     # print(label)
-    grid.to_png(cell_size=4, folder=folder, name=label)
-    return
+    img = grid.to_png(cell_size=4, folder=folder, name=label, save=True)
+    return img
 
 def main(img_path, folder):
-    makeMaze(img_path, "live_mz")
-    return
+    img = makeMaze(img_path, "live_mz")
+    return img
 
 
 if __name__ == "__main__":
