@@ -8,7 +8,7 @@ import OneTile
 from PIL import Image
 import numpy as np
 from pseyepy import Camera
-from math import floor
+# from math import floor
 from tomorrow import threads
 from skimage.measure import compare_ssim
 from datetime import datetime
@@ -17,6 +17,7 @@ from RecursiveBacktracker import RecursiveBacktracker
 from MaskedGrid import MaskedGrid
 
 processing = False
+
 
 @threads(20)
 def callTile(path):
@@ -105,16 +106,16 @@ def processFrame(bg):
     mask = Mask.from_img_data(pil_im)
     grid = MaskedGrid(mask)
     RecursiveBacktracker.on(grid)
-    img = grid.to_png(cell_size=4, folder="live_full_mz", name="live_full_mz", save=False)
-    # img = grid.to_png_inset(cell_size=8, inset=0.25, folder="live_full_mz", name="live_full_mz", save=False)
+    # img = grid.to_png(cell_size=4, folder="live_full_mz", name="live_full_mz", save=False)
+    img = grid.to_png_inset(cell_size=8, inset=0.25, folder="live_full_mz", name="live_full_mz", save=False)
     global processing
     processing = False
-    # print("updated in : %s" % (datetime.now() - start))
+    print("updated in : %s" % (datetime.now() - start))
     return img
 
 
 def main(cam, show, pseye):
-    if pseye == 1 :
+    if pseye == 1:
         cap = Camera([0], fps=60, resolution=Camera.RES_LARGE, colour=False)
         # frame, timestamp  = cap.read()
         # width, height = frame.shape
@@ -122,14 +123,14 @@ def main(cam, show, pseye):
         cap = cv2.VideoCapture(cam)
         # width = floor(cap.get(3)) // 2
         # height = floor(cap.get(4)) // 2
-    sz = 100
+    # sz = 100
     run = True
-    vals = {}
+    # vals = {}
     mz = cv2.imread("live_full_mz/live_full_mz.png")
     # mz_sm =  cv2.resize(mz, (0,0), fx=0.3, fy=0.3)
     global processing
     c = 1
-    last_diff = 0
+    # last_diff = 0
 
     cv2.namedWindow("mz", cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty("mz", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -148,34 +149,35 @@ def main(cam, show, pseye):
                 ret, frame = cap.read()
 
             frame = frame[100:320, 100:540]
-            small = cv2.resize(frame, (0,0), fx=0.1, fy=0.1)
+            small = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
             # gray = cv2.cvtColor(small,cv2.COLOR_BGR2GRAY)
             ret, thr = cv2.threshold(small, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             kernel = np.ones((1, 1), np.uint8)
             opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
             bg = cv2.dilate(opening, kernel, iterations=2)
 
-            # if c % 5 == 0:
+            # if c < 50:
             if not processing:
-                # diff = detect_diffs_two(vals, c, width, height, sz, bg)
-                # print(diff - last_diff)
-                #d_sum = diff - last_diff
-                #if d_sum > 0.005 or d_sum < -0.005:
+                    # diff = detect_diffs_two(vals, c, width, height, sz, bg)
+                    # print(diff - last_diff)
+                    # d_sum = diff - last_diff
+                    # if d_sum > 0.005 or d_sum < -0.005:
                 processing = True
                 mz = processFrame(bg)
                 try:
                     mz = np.array(mz)
-                    # mz = cv2.resize(mz, (0,0), fx=4, fy=4)
+                    # mz = cv2.resize(mz, (0, 0), fx=4, fy=4)
                 except Exception as e:
                     print(e)
                     pass
-                # mz = cv2.imread("live_full_mz/live_full_mz.png")
+                    # mz = cv2.imread("live_full_mz/live_full_mz.png")
 
-                # last_diff = diff
-                # mz_sm =  cv2.resize(mz, (0,0), fx=0.3, fy=0.3)
-                # mz - cv2.imread("live_full/", 1)
-                #  detect_diffs(vals, c, width, height, sz, bg)
-                # print("----")
+                    # last_diff = diff
+                    # mz_sm =  cv2.resize(mz, (0,0), fx=0.3, fy=0.3)
+                    # mz - cv2.imread("live_full/", 1)
+                    #  detect_diffs(vals, c, width, height, sz, bg)
+                    # print("----")
+
             if window:
                 try:
                     # cv2.imshow('cam', bg)
@@ -211,5 +213,3 @@ if __name__ == "__main__":
     else:
         print("loading camera %s with window. q to quit" % cam)
     main(cam, window, pseye)
-
-
