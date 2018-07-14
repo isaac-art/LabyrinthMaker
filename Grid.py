@@ -87,6 +87,7 @@ class Grid():
         img_hei = cell_size * self.rows
         bg = (255, 255, 255)
         wall = (56, 50, 38)
+        # wall = (255, 150, 138)
         img = Image.new("RGBA", (img_wid + 1, img_hei + 1), bg)
         draw = ImageDraw.Draw(img)
 
@@ -129,6 +130,44 @@ class Grid():
         if save:
             img.save("{}/{}.png".format(folder, name), "PNG", optimize=True)
         return img
+
+
+    def to_point_pairs(self, cell_size=4):
+        img_wid = cell_size * self.columns
+        img_hei = cell_size * self.rows
+        bg = (255, 255, 255)
+        wall = (56, 50, 38)
+        draw = []
+
+        for cell in self.each_cell():
+            x1 = cell.column * cell_size
+            y1 = cell.row * cell_size
+            x2 = (cell.column + 1) * cell_size
+            y2 = (cell.row + 1) * cell_size
+            half_cell = cell_size / 2
+
+            if cell.row == 0 and cell.column == 0:
+                if cell.is_linked(cell.south):
+                    draw.append((x1+half_cell,y1,x1+half_cell,y2))
+                else:
+                    draw.append((x1,y1+half_cell,x2,y1+half_cell))
+
+            if not cell.north:
+                draw.append((x1, y1, x2, y1))
+            if not cell.west:
+                draw.append((x1, y1, x1, y2))
+            if not cell.is_linked(cell.east):
+                draw.append((x2, y1, x2, y2))
+            if not cell.is_linked(cell.south):
+                draw.append((x1, y2, x2, y2))
+
+            if cell.is_linked(cell.east):
+                draw.append((x1 + half_cell, y1 + half_cell, x2 + half_cell, y1 + half_cell))
+            if cell.is_linked(cell.south):
+                draw.append((x1 + half_cell, y1 + half_cell, x1 + half_cell, y2 + half_cell))
+        
+        return draw
+
 
 
     def to_png_inset(self, cell_size=8, inset=0.25, folder="out", name="nm", save=True):
