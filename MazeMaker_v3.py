@@ -76,10 +76,13 @@ class MazeMaker():
         kernel = np.ones((1, 1), np.uint8)
         opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
         bg = cv2.dilate(opening, kernel, iterations=2)
-
+        # if not first frame
         if self.l_bg is not None:
+            # calculate the average of the current bg
             average = np.average(bg)
+            # compare to the last stored average
             diff = average - self.l_average
+            # if there is a big enough difference +/-
             if diff > 0.8 or diff < -0.8:
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
@@ -91,7 +94,9 @@ class MazeMaker():
                 RecursiveBacktracker.on(grid)
                 # get walls as list of coordinate pairs for drawing
                 self.mz = grid.to_point_pairs(cell_size=4)
+            # save the new average
             self.l_average = average
+        # save the background
         self.l_bg = bg
 
 
