@@ -1,25 +1,18 @@
-import os
-import sys
 import cv2
-import random
-from skimage.measure import compare_ssim
 from datetime import datetime
-from tomorrow import threads
 from PIL import Image
 import numpy as np
 from pseyepy import Camera
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
 from Mask import Mask
 from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
 class MazeMaker():
-    """docstring for MazeMaker"""
+    """MazeMaker"""
     def __init__(self):
         self.start = datetime.now()
         self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=False)
@@ -54,14 +47,14 @@ class MazeMaker():
         # self.mz.reverse()
         # loop over coordinates adding all the vertices
         for loc in self.mz:
-            x1, y1, x2, y2 = loc    
+            x1, y1, x2, y2 = loc
             # @ 0.1  = *5
-            # @ 0.25 = *2 
+            # @ 0.25 = *2
             # @ 0.15 = *3.333
-            glVertex2f(x1*3.333, y1*3.333)            
-            glVertex2f(x2*3.333, y2*3.333)  
-        # complete the shape and draw everything 
-        glEnd() 
+            glVertex2f(x1*3.333, y1*3.333)
+            glVertex2f(x2*3.333, y2*3.333)
+        # complete the shape and draw everything
+        glEnd()
 
 
     def refresh_scene(self):
@@ -87,7 +80,7 @@ class MazeMaker():
         #   so will adjust to the range present in the image
         ret, thr = cv2.threshold(small, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         # opening and dilating to remove noise
-        # kernel size is size of operation 
+        # kernel size is size of operation
         kernel = np.ones((1, 1), np.uint8)
         opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
         bg = cv2.dilate(opening, kernel, iterations=2)
@@ -115,16 +108,16 @@ class MazeMaker():
         self.l_bg = bg
 
 
-    def draw(self): 
+    def draw(self):
         glRotatef(180, 1.0, 0.0, 0.0)
         glClearColor(0, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         self.refresh_scene()
         self.update()
-        self.draw_maze() 
-        self.draw_cam()  
-        glutSwapBuffers()  
+        self.draw_maze()
+        self.draw_cam()
+        glutSwapBuffers()
 
 
     def main(self):
