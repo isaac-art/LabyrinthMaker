@@ -30,15 +30,28 @@ class MazeMaker():
         self.l_average = 0
 
 
+    def draw_cam(self):
+        frame, timestamp = self.cap.read()
+        frame = frame[0:360, 0:640]
+        frame = cv2.flip(frame, 1)
+        small = cv2.resize(frame, (0, 0), fx=0.6, fy=0.6)
+        ret, thr = cv2.threshold(small, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        kernel = np.ones((1, 1), np.uint8)
+        opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
+        bg = cv2.dilate(opening, kernel, iterations=2)
+        cv2.namedWindow("camera")
+        cv2.moveWindow("camera", 0, 0)
+        cv2.imshow("camera", bg)
+
     def draw_maze(self):
         # set the color of the line
-        glColor3f(0.3, 0.3, 0.5)
+        glColor3f(0.9, 0.9, 0.9)
         # set the line width for drawing
         glLineWidth(2)
         # begin shape with pairs of lines
         glBegin(GL_LINES)
         # the list of points is backwards so reverse it
-        self.mz.reverse()
+        # self.mz.reverse()
         # loop over coordinates adding all the vertices
         for loc in self.mz:
             x1, y1, x2, y2 = loc    
@@ -64,7 +77,9 @@ class MazeMaker():
         # get the frame
         frame, timestamp = self.cap.read()
         # crop to correct ratio
-        frame = frame[100:460, 0:640]
+        # frame = frame[100:460, 0:640]
+        frame = frame[0:360, 0:640]
+        frame = cv2.flip(frame, 1)
         # resize smaller for faster processing
         small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         # threshold the image
@@ -83,7 +98,7 @@ class MazeMaker():
             # compare to the last stored average
             diff = average - self.l_average
             # if there is a big enough difference +/-
-            if diff > 0.8 or diff < -0.8:
+            if diff > 1 or diff < -1:
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
                 # make a mask from the image
@@ -100,13 +115,15 @@ class MazeMaker():
         self.l_bg = bg
 
 
-    def draw(self):      
-        glClearColor(1, 1, 1, 1)
+    def draw(self): 
+        glRotatef(180, 1.0, 0.0, 0.0)
+        glClearColor(0, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         self.refresh_scene()
         self.update()
-        self.draw_maze()  
+        self.draw_maze() 
+        self.draw_cam()  
         glutSwapBuffers()  
 
 
@@ -114,7 +131,7 @@ class MazeMaker():
         glutInit()
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH)
         glutInitWindowSize(self.width, self.height)
-        glutInitWindowPosition(0, 0)
+        glutInitWindowPosition(1280, 0)
         glutSetCursor(GLUT_CURSOR_NONE)
         window = glutCreateWindow("MazeMaker")
         glutDisplayFunc(self.draw)
