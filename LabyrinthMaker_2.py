@@ -15,7 +15,8 @@ class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
         self.start = datetime.now()
-        self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=False)
+        # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=False)
+        self.cap = cv2.VideoCapture(0)
         self.laby = []
         self.l_bg = None
         self.width = 1280
@@ -25,10 +26,10 @@ class LabyrinthMaker():
 
     def process_cam(self, sz, flip):
         # get the frame
-        frame, timestamp = self.cap.read()
-        # crop to correct ratio
-        # frame = frame[100:460, 0:640]
-        frame = frame[0:360, 0:640]
+        ret, frame = self.cap.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # crop to correct ratio if pseyecam
+        # frame = frame[0:360, 0:640]
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         # resize smaller for faster processing
@@ -70,10 +71,10 @@ class LabyrinthMaker():
             # @ 0.1  = *5
             # @ 0.25 = *2
             # @ 0.15 = *3.333 
-            glVertex2f(x1*3.333, y1*3.333)
-            glVertex2f(x2*3.333, y2*3.333)
-            # glVertex2f(x1*2, y1*2)
-            # glVertex2f(x2*2, y2*2)
+            # glVertex2f(x1*3.333, y1*3.333)
+            # glVertex2f(x2*3.333, y2*3.333)
+            glVertex2f(x1*2, y1*2)
+            glVertex2f(x2*2, y2*2)
         # complete the shape and draw everything
         glEnd()
 
@@ -90,7 +91,7 @@ class LabyrinthMaker():
 
     def update(self):
         # update the labyrinth from camera image
-        bg = self.process_cam(0.15, -1)
+        bg = self.process_cam(0.125, -1)
         # if not first frame
         if self.l_bg is not None:
             # calculate the average of the current bg
@@ -122,7 +123,7 @@ class LabyrinthMaker():
         self.refresh_scene()
         self.update()
         self.draw_laby()
-        # self.draw_cam()
+        self.draw_cam()
         glutSwapBuffers()
 
 
