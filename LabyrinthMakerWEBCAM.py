@@ -16,7 +16,7 @@ class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
         self.start = datetime.now()
-        self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+        self.cap = cv2.VideoCapture(0)
         self.laby = []
         self.l_bg = None
         self.width = 1280
@@ -29,16 +29,15 @@ class LabyrinthMaker():
 
     def process_cam(self, sz, flip, bw=True):
         # get the frame
-        frame, timestamp = self.cap.read()
+        ret, frame = self.cap.read()
         # crop to correct ratio
         # frame = frame[100:460, 0:640]
-        frame = frame[0:360, 0:640]
+        # frame = frame[0:360, 0:640]
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         # resize smaller for faster processing
         # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
-        small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
         self.l_frame = small
         if not bw:
             return small
@@ -65,8 +64,7 @@ class LabyrinthMaker():
 
     def draw_mask(self):   
         if self.mask is not None:  
-            # self.l_frame = cv2.blur(self.l_frame, (14, 14))
-            glPointSize(14)     
+            glPointSize(12)     
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
@@ -75,21 +73,14 @@ class LabyrinthMaker():
                         glColor3f(rr/255, gg/255, bb/255)
                         glVertex2f(c*13.333, r*13.333)
 
-                        # bb, gg, rr = self.l_frame[r+1, c+1]
-                        # glColor3f(rr/255, gg/255, bb/255)
-                        # glVertex2f(c*13.333+12, r*13.333+12)
+                        bb, gg, rr = self.l_frame[r+1, c+1]
+                        glColor3f(rr/255, gg/255, bb/255)
+                        glVertex2f(c*13.333+20, r*13.333+20)
 
             glEnd()
 
 
     def draw_laby(self):
-        glPointSize(13)     
-        glColor3f(1, 1, 1)
-        glBegin(GL_POINTS)
-        for loc in self.laby:
-            x1, y1, x2, y2 = loc
-            glVertex2f(x1*3.333, y1*3.333)
-        glEnd()
         # Draws the labyrinth to gl
         # set the line width for drawing
         glLineWidth(1)
@@ -133,7 +124,7 @@ class LabyrinthMaker():
             # compare to the last stored average
             diff = average - self.l_average
             # if there is a big enough difference +/-
-            if diff > 1.5 or diff < -1.5:
+            if diff > 1 or diff < -1:
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
                 # make a mask from the image

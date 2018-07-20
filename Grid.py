@@ -135,8 +135,6 @@ class Grid():
     def to_point_pairs(self, cell_size=4):
         img_wid = cell_size * self.columns
         img_hei = cell_size * self.rows
-        bg = (255, 255, 255)
-        wall = (56, 50, 38)
         draw = []
 
         for cell in self.each_cell():
