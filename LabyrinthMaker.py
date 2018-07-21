@@ -66,7 +66,7 @@ class LabyrinthMaker():
     def draw_mask(self):   
         if self.mask is not None:
             # Blur the camera image 
-            # self.l_frame = cv2.blur(self.l_frame, (4, 4))
+            self.l_frame = cv2.blur(self.l_frame, (6, 6))
             glPointSize(13.333)     
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
