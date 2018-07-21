@@ -64,16 +64,17 @@ class LabyrinthMaker():
 
 
     def draw_mask(self):   
-        if self.mask is not None:  
-            # self.l_frame = cv2.blur(self.l_frame, (14, 14))
-            glPointSize(14)     
+        if self.mask is not None:
+            # Blur the camera image 
+            # self.l_frame = cv2.blur(self.l_frame, (4, 4))
+            glPointSize(13.333)     
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
                         bb, gg, rr = self.l_frame[r, c]
                         glColor3f(rr/255, gg/255, bb/255)
-                        glVertex2f(c*13.333, r*13.333)
+                        glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
 
                         # bb, gg, rr = self.l_frame[r+1, c+1]
                         # glColor3f(rr/255, gg/255, bb/255)
@@ -83,16 +84,9 @@ class LabyrinthMaker():
 
 
     def draw_laby(self):
-        glPointSize(13)     
-        glColor3f(1, 1, 1)
-        glBegin(GL_POINTS)
-        for loc in self.laby:
-            x1, y1, x2, y2 = loc
-            glVertex2f(x1*3.333, y1*3.333)
-        glEnd()
         # Draws the labyrinth to gl
         # set the line width for drawing
-        glLineWidth(1)
+        glLineWidth(2)
         # set the color of the line
         glColor3f(0.1, 0.1, 0.1)
         # begin shape with pairs of lines
@@ -107,8 +101,8 @@ class LabyrinthMaker():
             # @ 0.15 = *3.333 
             glVertex2f(x1*3.333, y1*3.333)
             glVertex2f(x2*3.333, y2*3.333)
-            # glVertex2f(x1*2, y1*2)
-            # glVertex2f(x2*2, y2*2)
+            # glVertex2f(x1*4, y1*4)
+            # glVertex2f(x2*4, y2*4)
         # complete the shape and draw everything
         glEnd()
 
