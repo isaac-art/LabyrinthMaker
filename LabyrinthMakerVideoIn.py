@@ -16,11 +16,14 @@ class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
         self.start = datetime.now()
-        self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+        # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+        self.cap = cv2.VideoCapture("video_in/b.m4v")
         self.laby = []
         self.l_bg = None
         self.width = 1280
         self.height = 720
+        # self.width = 480*2
+        # self.height = 480*2
         self.l_average = 0
         self.l_frame = None
         self.grid = None
@@ -29,16 +32,16 @@ class LabyrinthMaker():
 
     def process_cam(self, sz, flip, bw=True):
         # get the frame
-        frame, timestamp = self.cap.read()
+        ret, frame = self.cap.read()
         # crop to correct ratio
         # frame = frame[100:460, 0:640]
-        frame = frame[0:360, 0:640]
+        # frame = frame[0:360, 0:640]
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         # resize smaller for faster processing
         # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
-        small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+        # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
         self.l_frame = small
         if not bw:
             return small
@@ -66,7 +69,7 @@ class LabyrinthMaker():
     def draw_mask(self):   
         if self.mask is not None:
             # Blur the camera image 
-            self.l_frame = cv2.blur(self.l_frame, (10, 10))
+            self.l_frame = cv2.blur(self.l_frame, (12, 12))
             glPointSize(13.333)     
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
@@ -88,7 +91,7 @@ class LabyrinthMaker():
         # set the line width for drawing
         glLineWidth(1)
         # set the color of the line
-        glColor3f(0.1, 0.1, 0.1)
+        glColor3f(0.1, 0.1, 0.2)
         # begin shape with pairs of lines
         glBegin(GL_LINES)
         # the list of points is backwards so reverse it
@@ -119,7 +122,7 @@ class LabyrinthMaker():
 
     def update(self):
         # update the labyrinth from camera image
-        bg = self.process_cam(0.15, -1)
+        bg = self.process_cam(0.05, 0)
         # if not first frame
         if self.l_bg is not None:
             # calculate the average of the current bg
@@ -152,7 +155,7 @@ class LabyrinthMaker():
         self.update()
         self.draw_mask()
         self.draw_laby()
-        self.draw_cam()
+        # self.draw_cam()
         glutSwapBuffers()
 
 

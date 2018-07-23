@@ -13,3 +13,6 @@ img/*.png
 out/**
 *.png
 *.jpg
+video_in/a.mp4
+video_in/b.m4v
+video_in/c.m4v
