@@ -16,46 +16,54 @@ class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
         self.start = datetime.now()
-        # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
-        self.cap = cv2.VideoCapture("video_in/b.m4v")
         self.laby = []
         self.l_bg = None
+        # self.width = 1280
+        # self.height = 720
         self.width = 1280
-        self.height = 720
-        # self.width = 480*2
-        # self.height = 480*2
+        self.height = 1280
         self.l_average = 0
         self.l_frame = None
         self.grid = None
-        self.mask = None
+        self.mask = None 
+        # camera and output video 
+        # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+        self.cap = cv2.VideoCapture("video_in/b.mp4")
+        self.fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        self.out = cv2.VideoWriter('video_out/b.avi', self.fourcc, 20.0, (self.width,self.height))
 
 
     def process_cam(self, sz, flip, bw=True):
         # get the frame
         ret, frame = self.cap.read()
-        # crop to correct ratio
-        # frame = frame[100:460, 0:640]
-        # frame = frame[0:360, 0:640]
-        # -1 flip hori+vert / 1 flip vert / 0 flip hori
-        frame = cv2.flip(frame, flip)
-        # resize smaller for faster processing
-        # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
-        small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
-        # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
-        self.l_frame = small
-        if not bw:
-            return small
-        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        # threshold the image
-        # otsu threshold is adaptive
-        #   so will adjust to the range present in the image
-        ret, thr = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        # opening and dilating to remove noise
-        # kernel size is size of operation
-        kernel = np.ones((1, 1), np.uint8)
-        opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
-        bg = cv2.dilate(opening, kernel, iterations=3)
-        return bg
+        if ret:
+            # crop to correct ratio
+            # frame = frame[100:460, 0:640]
+            # frame = frame[0:360, 0:640]
+            # -1 flip hori+vert / 1 flip vert / 0 flip hori
+            frame = cv2.flip(frame, flip)
+            # resize smaller for faster processing
+            # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
+            small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
+            # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+            self.l_frame = small
+            if not bw:
+                return small
+            gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+            # threshold the image
+            # otsu threshold is adaptive
+            #   so will adjust to the range present in the image
+            ret, thr = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # opening and dilating to remove noise
+            # kernel size is size of operation
+            kernel = np.ones((1, 1), np.uint8)
+            opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
+            bg = cv2.dilate(opening, kernel, iterations=3)
+            return bg
+        else:
+            self.cap.release()
+            self.out.release()
+            exit()
 
 
     def draw_cam(self):
@@ -147,6 +155,17 @@ class LabyrinthMaker():
         self.l_bg = bg
 
 
+    def save_frame(self):
+        glReadBuffer(GL_BACK)
+        fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
+        imagebuffer = np.fromstring(fbuffer, np.uint8)
+        fimage = imagebuffer.reshape(self.width, self.height, 3)
+        # image = Image.fromarray(fimage)
+        # image.save("video_out/a.png", 'png')
+        out = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
+        self.out.write(out)
+
+
     def draw(self):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -156,8 +175,8 @@ class LabyrinthMaker():
         self.draw_mask()
         self.draw_laby()
         # self.draw_cam()
+        self.save_frame()
         glutSwapBuffers()
-
 
     def main(self):
         glutInit()
