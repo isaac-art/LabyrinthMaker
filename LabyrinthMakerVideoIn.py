@@ -18,19 +18,23 @@ class LabyrinthMaker():
         self.start = datetime.now()
         self.laby = []
         self.l_bg = None
-        # self.width = 1280
-        # self.height = 720
         self.width = 1280
-        self.height = 1280
+        self.height = 720
+        # self.width = 1280
+        # self.height = 720   
+        # 425 for bloom videos
+        # self.width = 425
+        # self.height = 425
         self.l_average = 0
         self.l_frame = None
         self.grid = None
         self.mask = None 
+        self.f_num = 0
         # camera and output video 
         # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
         self.cap = cv2.VideoCapture("video_in/b.mp4")
         self.fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        self.out = cv2.VideoWriter('video_out/b.avi', self.fourcc, 20.0, (self.width,self.height))
+        self.out = cv2.VideoWriter('video_out/bb.avi', self.fourcc, 20.0, (self.width,self.height))
 
 
     def process_cam(self, sz, flip, bw=True):
@@ -159,11 +163,11 @@ class LabyrinthMaker():
         glReadBuffer(GL_BACK)
         fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
         imagebuffer = np.fromstring(fbuffer, np.uint8)
-        fimage = imagebuffer.reshape(self.width, self.height, 3)
-        # image = Image.fromarray(fimage)
-        # image.save("video_out/a.png", 'png')
-        out = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
-        self.out.write(out)
+        fimage = imagebuffer.reshape(self.height, self.width, 3)
+        image = Image.fromarray(fimage)
+        image.save("video_out/frames/%s.png" % self.f_num, 'png')
+        outim = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
+        self.out.write(outim)
 
 
     def draw(self):
@@ -176,7 +180,9 @@ class LabyrinthMaker():
         self.draw_laby()
         # self.draw_cam()
         self.save_frame()
+        self.f_num += 1
         glutSwapBuffers()
+
 
     def main(self):
         glutInit()

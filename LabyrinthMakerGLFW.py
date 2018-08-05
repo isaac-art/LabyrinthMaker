@@ -1,11 +1,11 @@
 import glfw
 import cv2
+import random
 import numpy as np
 from Mask import Mask
 from PIL import Image
 from OpenGL.GL import *
 from pseyepy import Camera
-from random import randint
 from datetime import datetime
 from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
@@ -16,19 +16,25 @@ class LabyrinthMaker():
     def __init__(self):
         self.start = datetime.now()
         self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+        # self.cap = cv2.VideoCapture(0)
         self.laby = []
+        self.frame = 0
         self.l_bg = None
         self.width = 1280
         self.height = 720
         self.l_average = 0
         self.l_frame = None
         self.grid = None
-        self.mask = None
+        self.mask = None 
+        self.f_num = 0
+        self.fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        self.out = cv2.VideoWriter('video_out/cc.avi', self.fourcc, 20.0, (self.width,self.height))
 
 
     def process_cam(self, sz, flip, bw=True):
         # get the frame
         frame, timestamp = self.cap.read()
+        # ret, frame = self.cap.read()
         # crop to correct ratio
         # frame = frame[100:460, 0:640]
         frame = frame[0:360, 0:640]
@@ -66,29 +72,28 @@ class LabyrinthMaker():
         if self.mask is not None:
             # Blur the camera image 
             self.l_frame = cv2.blur(self.l_frame, (10, 10))
-            glPointSize(13.333*2)     
+            # glPointSize(13.333*2)   
+            glPointSize(13.333)
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
                         bb, gg, rr = self.l_frame[r, c]
                         glColor3f(rr/255, gg/255, bb/255)
-                        # glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
-                        glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
-
+                        glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
+                        # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
                         # bb, gg, rr = self.l_frame[r+1, c+1]
                         # glColor3f(rr/255, gg/255, bb/255)
                         # glVertex2f(c*13.333+12, r*13.333+12)
-
             glEnd()
 
 
     def draw_laby(self):
         # Draws the labyrinth to gl
         # set the line width for drawing
-        glLineWidth(2)
+        glLineWidth(1)
         # set the color of the line
-        glColor3f(0.1, 0.1, 0.1)
+        glColor3f(0.1, 0.1, 0.2)
         # begin shape with pairs of lines
         glBegin(GL_LINES)
         # the list of points is backwards so reverse it
@@ -99,10 +104,10 @@ class LabyrinthMaker():
             # @ 0.1  = *5
             # @ 0.25 = *2
             # @ 0.15 = *3.333 
-            # glVertex2f(x1*3.333, y1*3.333)
-            # glVertex2f(x2*3.333, y2*3.333)
-            glVertex2f(x1*6.666, y1*6.666)
-            glVertex2f(x2*6.666, y2*6.666)
+            glVertex2f(x1*3.333, y1*3.333)
+            glVertex2f(x2*3.333, y2*3.333)
+            # glVertex2f(x1*6.666, y1*6.666)
+            # glVertex2f(x2*6.666, y2*6.666)
             # glVertex2f(x1*4, y1*4)
             # glVertex2f(x2*4, y2*4)
         # complete the shape and draw everything
@@ -111,17 +116,20 @@ class LabyrinthMaker():
 
     def refresh_scene(self):
         # refresh the gl scene
-        glViewport(0, 0, self.width*2, self.height*2)
+        # NOTE: DOUBLE HEIGHT AND WIDTH FOR HIGHDPI, REDUCE FOR STANDARD
+        # glViewport(0, 0, self.width*2, self.height*2)
+        glViewport(0, 0, self.width, self.height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0.0, self.width*2, 0.0, self.height*2, 0.0, 1.0)
+        glOrtho(0.0, self.width, 0.0, self.height, 0.0, 1.0)
+        # glOrtho(0.0, self.width*2, 0.0, self.height*2, 0.0, 1.0)
         glMatrixMode (GL_MODELVIEW)
         glLoadIdentity()
 
 
     def update(self):
         # update the labyrinth from camera image
-        bg = self.process_cam(0.15, -1)
+        bg = self.process_cam(0.15, 1)
         # if not first frame
         if self.l_bg is not None:
             # calculate the average of the current bg
@@ -129,7 +137,8 @@ class LabyrinthMaker():
             # compare to the last stored average
             diff = average - self.l_average
             # if there is a big enough difference +/-
-            if diff > 1.5 or diff < -1.5:
+            if diff > 1.65 or diff < -1.65:
+
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
                 # make a mask from the image
@@ -140,10 +149,23 @@ class LabyrinthMaker():
                 RecursiveBacktracker.on(self.grid)
                 # get walls as list of coordinate pairs for drawing
                 self.laby = self.grid.to_point_pairs(cell_size=4)
+
+
             # save the new average
             self.l_average = average
         # save the background
         self.l_bg = bg
+
+
+    def save_frame(self):
+        glReadBuffer(GL_BACK)
+        fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
+        imagebuffer = np.fromstring(fbuffer, np.uint8)
+        fimage = imagebuffer.reshape(self.height, self.width, 3)
+        image = Image.fromarray(fimage)
+        image.save("video_out/frames/live/%s.png" % self.f_num, 'png')
+        outim = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
+        self.out.write(outim)
 
 
     def draw(self):
@@ -154,7 +176,9 @@ class LabyrinthMaker():
         self.update()
         self.draw_mask()
         self.draw_laby()
-        # self.draw_cam()
+        # self.save_frame()
+        self.draw_cam()
+        self.f_num = self.f_num + 1
 
 
     def main(self):
