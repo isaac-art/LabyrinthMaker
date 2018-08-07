@@ -70,8 +70,18 @@ class LabyrinthMaker():
 
     def draw_mask(self):   
         if self.mask is not None:
+
+            # saturate
+            l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
+            h, s, v = cv2.split(l_frame_hsv)
+            s = s * 10
+            s = np.clip(s, 0, 255)
+            l_frame_hsv = cv2.merge([h, s, v])
+            self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
+
             # Blur the camera image 
-            self.l_frame = cv2.blur(self.l_frame, (10, 10))
+            self.l_frame = cv2.blur(self.l_frame, (13, 13))
+
             # glPointSize(13.333*2)   
             glPointSize(13.333)
             glBegin(GL_POINTS)
@@ -141,6 +151,11 @@ class LabyrinthMaker():
 
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
+
+                # PERHAPS CULD PUT SOME KIND OF BACKGROUND 
+                # SUBTRACTION HERE 
+
+
                 # make a mask from the image
                 self.mask = Mask.from_img_data(pil_im)
                 # build a grid from the unmasked areas

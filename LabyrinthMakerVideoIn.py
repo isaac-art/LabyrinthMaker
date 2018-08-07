@@ -32,7 +32,7 @@ class LabyrinthMaker():
         self.f_num = 0
         # camera and output video 
         # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
-        self.cap = cv2.VideoCapture("video_in/b.mp4")
+        self.cap = cv2.VideoCapture("video_in/TheDead.mkv")
         self.fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         self.out = cv2.VideoWriter('video_out/bb.avi', self.fourcc, 20.0, (self.width,self.height))
 
@@ -45,7 +45,7 @@ class LabyrinthMaker():
             # frame = frame[100:460, 0:640]
             # frame = frame[0:360, 0:640]
             # -1 flip hori+vert / 1 flip vert / 0 flip hori
-            frame = cv2.flip(frame, flip)
+            # frame = cv2.flip(frame, 1)
             # resize smaller for faster processing
             # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
             small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
@@ -80,16 +80,26 @@ class LabyrinthMaker():
 
     def draw_mask(self):   
         if self.mask is not None:
+            # saturate 
+            l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
+            h, s, v = cv2.split(l_frame_hsv)
+            s = s * 10
+            s = np.clip(s, 0, 255)
+            l_frame_hsv = cv2.merge([h, s, v])
+            self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
+
             # Blur the camera image 
             self.l_frame = cv2.blur(self.l_frame, (12, 12))
-            glPointSize(13.333)     
+
+            glPointSize(20)     
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
                         bb, gg, rr = self.l_frame[r, c]
                         glColor3f(rr/255, gg/255, bb/255)
-                        glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
+                        # glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
+                        glVertex2f((c+0.5)*20, (r+0.5)*20)
 
                         # bb, gg, rr = self.l_frame[r+1, c+1]
                         # glColor3f(rr/255, gg/255, bb/255)
@@ -114,10 +124,10 @@ class LabyrinthMaker():
             # @ 0.1  = *5
             # @ 0.25 = *2
             # @ 0.15 = *3.333 
-            glVertex2f(x1*3.333, y1*3.333)
-            glVertex2f(x2*3.333, y2*3.333)
-            # glVertex2f(x1*4, y1*4)
-            # glVertex2f(x2*4, y2*4)
+            # glVertex2f(x1*3.333, y1*3.333)
+            # glVertex2f(x2*3.333, y2*3.333)
+            glVertex2f(x1*5, y1*5)
+            glVertex2f(x2*5, y2*5)
         # complete the shape and draw everything
         glEnd()
 
@@ -134,7 +144,7 @@ class LabyrinthMaker():
 
     def update(self):
         # update the labyrinth from camera image
-        bg = self.process_cam(0.05, 0)
+        bg = self.process_cam(0.05, 1)
         # if not first frame
         if self.l_bg is not None:
             # calculate the average of the current bg
@@ -164,8 +174,8 @@ class LabyrinthMaker():
         fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
         imagebuffer = np.fromstring(fbuffer, np.uint8)
         fimage = imagebuffer.reshape(self.height, self.width, 3)
-        image = Image.fromarray(fimage)
-        image.save("video_out/frames/%s.png" % self.f_num, 'png')
+        # image = Image.fromarray(fimage)
+        # image.save("video_out/frames/%s.png" % self.f_num, 'png')
         outim = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
         self.out.write(outim)
 
@@ -190,7 +200,7 @@ class LabyrinthMaker():
         glutInitWindowSize(self.width, self.height)
         glutInitWindowPosition(1280, 0)
         glutSetCursor(GLUT_CURSOR_NONE)
-        window = glutCreateWindow("LabyrinthMaker")
+        window = glutCreateWindow("PathMaker")
         glutDisplayFunc(self.draw)
         glutIdleFunc(self.draw)
         glutMainLoop()
