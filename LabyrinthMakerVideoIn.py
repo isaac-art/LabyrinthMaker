@@ -83,7 +83,7 @@ class LabyrinthMaker():
             # saturate 
             l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
             h, s, v = cv2.split(l_frame_hsv)
-            s = s * 10
+            s = s * 5
             s = np.clip(s, 0, 255)
             l_frame_hsv = cv2.merge([h, s, v])
             self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 

@@ -28,7 +28,6 @@ class LabyrinthMaker():
         # KINECT SETUP
         self.ctx = freenect.init()
         self.kinect_device = freenect.open_device(self.ctx, freenect.num_devices(self.ctx) - 1)
-        self.kinect_change_led(kinect_device, 1)
 
         # LABY and GL 
         self.laby = []
@@ -51,7 +50,7 @@ class LabyrinthMaker():
 
 
     # PROCESS THE CAMERA INPUT
-    def process_cam(self, sz, flip, bw=True):
+    def process_cam(self, sz, flip, bw=True, sm_dp=False):
         # get the frame
         # frame, timestamp = self.cap.read()
         # ret, frame = self.cap.read()
@@ -71,6 +70,8 @@ class LabyrinthMaker():
         self.l_frame = small
         if not bw:
             return small
+        if sm_dp:
+            return small_depth
         # grayscale image, alreay gray if kinect
         # gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
         # blur a small amount to smooth
@@ -96,9 +97,11 @@ class LabyrinthMaker():
 
     def kinect_change_tilt(self, value):
         # tilt relative to the horizon!
+        self.kinect_tilt = value
         freenect.set_tilt_degs(self.kinect_device, self.kinect_tilt)
 
     def kinect_change_led(self, value):
+        self.kinect_led = value
         # LED_OFF    = 0,
         # LED_GREEN  = 1,
         # LED_RED    = 2,
@@ -129,13 +132,17 @@ class LabyrinthMaker():
         img, timestamp = freenect.sync_get_video()[0]
         return frame_convert2.video_cv(img)
          
+    def change_saturation(self, value):
+        self.saturation = value
+
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
-        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 500, self.kinect_change_threshold)
-        cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
-        cv2.createTrackbar('tilt', 'gui', self.kinect_tilt, 30, self.kinect_change_tilt)
-        cv2.createTrackbar('led', 'gui', self.kinect_led, 6, self.kinect_change_led)
+        cv2.createTrackbar('threshold', 'gui', 0, 500, self.kinect_change_threshold)
+        cv2.createTrackbar('depth', 'gui', 0, 2048, self.kinect_change_depth)
+        cv2.createTrackbar('tilt', 'gui', 0, 30, self.kinect_change_tilt)
+        cv2.createTrackbar('led', 'gui', 0, 6, self.kinect_change_led)
+        cv2.createTrackbar('saturation', 'gui', 0, 10, self.change_saturation)
 
 
     # DRAW CAMERA IMAGE
@@ -145,7 +152,13 @@ class LabyrinthMaker():
         cv2.namedWindow("camera")
         # cv2.moveWindow("camera", 0, 0)
         cv2.imshow("camera", bg)
- 
+
+    # DRAW DEPTH IMAGE
+    def draw_depth(self):
+        # draws the camera to a second window
+        bg = self.process_cam(0.5, 1, bw=True, sm_dp=True)
+        cv2.namedWindow("depth")
+        cv2.imshow("depth", bg)
 
     # DRAW THE IMAGE COLOURS TO THE GL BUFFER
     def draw_mask(self):   
@@ -154,7 +167,7 @@ class LabyrinthMaker():
             # saturate
             l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
             h, s, v = cv2.split(l_frame_hsv)
-            s = s * 5
+            s = s * self.saturation
             s = np.clip(s, 0, 255)
             l_frame_hsv = cv2.merge([h, s, v])
             self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
@@ -273,10 +286,23 @@ class LabyrinthMaker():
         glLoadIdentity()
         self.refresh_scene()
         self.update()
+
+        self.kinect_change_led(1)
+
         self.draw_mask()
+
+        self.kinect_change_led(2)
+
         self.draw_laby()
+
+        self.kinect_change_led(3)
+
         # self.save_frame()
         # self.draw_cam()
+        self.draw_depth()
+
+        self.kinect_change_led(0)
+
         self.draw_gui()
         self.f_num = self.f_num + 1
 
