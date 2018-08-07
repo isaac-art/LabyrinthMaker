@@ -16,17 +16,21 @@ from RecursiveBacktracker import RecursiveBacktracker
 class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
+        # store time for logging
         self.start = datetime.now()
-        # CAMERAS
-        # PSEYECAM SETUP
+
+        # PS3EYECAM SETUP
         # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+
         # WEBCAM SETUP
         # self.cap = cv2.VideoCapture(0)
+
         # KINECT SETUP
         self.ctx = freenect.init()
         self.kinect_device = freenect.open_device(self.ctx, freenect.num_devices(self.ctx) - 1)
         self.kinect_change_led(kinect_device, 1)
-        # LABY GL THINGS
+
+        # LABY and GL 
         self.laby = []
         self.frame = 0
         self.l_bg = None
@@ -37,12 +41,16 @@ class LabyrinthMaker():
         self.grid = None
         self.mask = None 
         self.f_num = 0
+
         # KINECT VALS
         self.kinect_threshold = 100
         self.kinect_current_depth = freenect.sync_get_depth()[0]
         self.kinect_tilt = freenect.get_tilt_degs()[0]
         self.kinect_led = 1
     
+
+
+    # PROCESS THE CAMERA INPUT
     def process_cam(self, sz, flip, bw=True):
         # get the frame
         # frame, timestamp = self.cap.read()
@@ -121,7 +129,7 @@ class LabyrinthMaker():
         img, timestamp = freenect.sync_get_video()[0]
         return frame_convert2.video_cv(img)
          
-
+    # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
         cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 500, self.kinect_change_threshold)
@@ -130,6 +138,7 @@ class LabyrinthMaker():
         cv2.createTrackbar('led', 'gui', self.kinect_led, 6, self.kinect_change_led)
 
 
+    # DRAW CAMERA IMAGE
     def draw_cam(self):
         # draws the camera to a second window
         bg = self.process_cam(0.5, 1, bw=False)
@@ -138,6 +147,7 @@ class LabyrinthMaker():
         cv2.imshow("camera", bg)
  
 
+    # DRAW THE IMAGE COLOURS TO THE GL BUFFER
     def draw_mask(self):   
         if self.mask is not None:
 
@@ -168,6 +178,7 @@ class LabyrinthMaker():
             glEnd()
 
 
+    # DRAW THE LABYRINTH PATH TO THE GL BUFFER
     def draw_laby(self):
         # Draws the labyrinth to gl
         # set the line width for drawing
@@ -194,6 +205,7 @@ class LabyrinthMaker():
         glEnd()
 
 
+    # REFRESH THE GL BUFFERS
     def refresh_scene(self):
         # refresh the gl scene
         # NOTE: DOUBLE HEIGHT AND WIDTH FOR HIGHDPI(macbook), REDUCE FOR STANDARD(tv)
@@ -207,6 +219,7 @@ class LabyrinthMaker():
         glLoadIdentity()
 
 
+    # LABYRINTH UPDATE LOOP
     def update(self):
         # update the labyrinth from camera image
         bg = self.process_cam(0.15, 1)
@@ -225,7 +238,6 @@ class LabyrinthMaker():
                 # TODO: PERHAPS CULD PUT SOME KIND OF BACKGROUND SUBTRACTION HERE ??
                 # SOLVED: USE KINECT AND THRESHOLD ON DISTANCE TO REMOVE BG
 
-
                 # make a mask from the image
                 self.mask = Mask.from_img_data(pil_im)
                 # build a grid from the unmasked areas
@@ -242,6 +254,7 @@ class LabyrinthMaker():
         self.l_bg = bg
 
 
+    # SAVING IMAGES OF FRAMES OR TO VIDEO CAPTURE
     def save_frame(self):
         glReadBuffer(GL_BACK)
         fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
@@ -253,6 +266,7 @@ class LabyrinthMaker():
         self.out.write(outim)
 
 
+    # THE GL DRAW LOOP
     def draw(self):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -266,7 +280,7 @@ class LabyrinthMaker():
         self.draw_gui()
         self.f_num = self.f_num + 1
 
-
+    # MAKE GLFW WINDOW AND START THE LOOP
     def main(self):
         if not glfw.init():
             return
@@ -285,6 +299,7 @@ class LabyrinthMaker():
             glfw.poll_events()
         glfw.terminate()
 
-
+# make labyrinth obj
 labyrinth = LabyrinthMaker()
+# start the whole thing up
 labyrinth.main()
