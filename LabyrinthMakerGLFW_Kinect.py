@@ -25,10 +25,8 @@ class LabyrinthMaker():
         # WEBCAM SETUP
         # self.cap = cv2.VideoCapture(0)
 
-        # KINECT SETUP
-        self.ctx = freenect.init()
-        self.kinect_device = freenect.open_device(self.ctx, freenect.num_devices(self.ctx) - 1)
 
+        
         # LABY and GL 
         self.laby = []
         self.frame = 0
@@ -40,12 +38,11 @@ class LabyrinthMaker():
         self.grid = None
         self.mask = None 
         self.f_num = 0
+        self.saturation = 5
 
         # KINECT VALS
         self.kinect_threshold = 100
-        self.kinect_current_depth = freenect.sync_get_depth()[0]
-        self.kinect_tilt = freenect.get_tilt_degs()[0]
-        self.kinect_led = 1
+        self.kinect_current_depth = 0
     
 
 
@@ -79,7 +76,7 @@ class LabyrinthMaker():
         # threshold the image
         # otsu threshold is adaptive
         #   so will adjust to the range present in the image
-        ret, thr = cv2.threshold(blur_depth, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        ret, thr = cv2.threshold(blur_depth, 1, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         # opening and dilating to remove noise
         # kernel size is size of operation
         kernel = np.ones((1, 1), np.uint8)
@@ -95,29 +92,12 @@ class LabyrinthMaker():
     def kinect_change_depth(self, value):
         self.kinect_current_depth = value
 
-    def kinect_change_tilt(self, value):
-        # tilt relative to the horizon!
-        self.kinect_tilt = value
-        freenect.set_tilt_degs(self.kinect_device, self.kinect_tilt)
-
-    def kinect_change_led(self, value):
-        self.kinect_led = value
-        # LED_OFF    = 0,
-        # LED_GREEN  = 1,
-        # LED_RED    = 2,
-        # LED_YELLOW = 3, (actually orange)
-        # LED_BLINK_YELLOW = 4, (actually orange)
-        # LED_BLINK_GREEN = 5,
-        # LED_BLINK_RED_YELLOW = 6 (actually red/orange)
-        freenect.set_led(self.kinect_device, self.kinect_led)
-
-    def kinect_get_accel(self):
-        return freenect.get_accel(self.kinect_device)
 
     def kinect_get_depth(self):
         # depth: A numpy array, shape:(640,480) dtype:np.uint16
         # timestamp: int representing the time
-        depth, timestamp = freenect.sync_get_depth()[0]
+        depth, timestamp = freenect.sync_get_depth()
+
         # filter depth range
         depth = 255 * np.logical_and(depth >= self.kinect_current_depth - self.kinect_threshold,
                                      depth <= self.kinect_current_depth + self.kinect_threshold)
@@ -129,7 +109,7 @@ class LabyrinthMaker():
     def kinect_get_image(self):
         # im: A numpy array, shape:(480, 640, 3) dtype:np.uint8
         # timestamp: int representing the time
-        img, timestamp = freenect.sync_get_video()[0]
+        img, timestamp = freenect.sync_get_video()
         return frame_convert2.video_cv(img)
          
     def change_saturation(self, value):
@@ -138,11 +118,9 @@ class LabyrinthMaker():
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
-        cv2.createTrackbar('threshold', 'gui', 0, 500, self.kinect_change_threshold)
-        cv2.createTrackbar('depth', 'gui', 0, 2048, self.kinect_change_depth)
-        cv2.createTrackbar('tilt', 'gui', 0, 30, self.kinect_change_tilt)
-        cv2.createTrackbar('led', 'gui', 0, 6, self.kinect_change_led)
-        cv2.createTrackbar('saturation', 'gui', 0, 10, self.change_saturation)
+        cv2.createTrackbar('threshold', 'gui', 260, 500, self.kinect_change_threshold)
+        cv2.createTrackbar('depth', 'gui', 350, 2048, self.kinect_change_depth)
+        cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
 
 
     # DRAW CAMERA IMAGE
@@ -286,23 +264,11 @@ class LabyrinthMaker():
         glLoadIdentity()
         self.refresh_scene()
         self.update()
-
-        self.kinect_change_led(1)
-
         self.draw_mask()
-
-        self.kinect_change_led(2)
-
         self.draw_laby()
-
-        self.kinect_change_led(3)
-
         # self.save_frame()
         # self.draw_cam()
         self.draw_depth()
-
-        self.kinect_change_led(0)
-
         self.draw_gui()
         self.f_num = self.f_num + 1
 

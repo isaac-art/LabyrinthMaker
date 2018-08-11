@@ -132,7 +132,7 @@ class Grid():
         return img
 
 
-    def to_point_pairs(self, cell_size=4):
+    def to_point_pairs(self, cell_size=4, entrance=True):
         img_wid = cell_size * self.columns
         img_hei = cell_size * self.rows
         draw = []

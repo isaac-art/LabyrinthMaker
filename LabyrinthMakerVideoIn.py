@@ -45,7 +45,8 @@ class LabyrinthMaker():
             # frame = frame[100:460, 0:640]
             # frame = frame[0:360, 0:640]
             # -1 flip hori+vert / 1 flip vert / 0 flip hori
-            # frame = cv2.flip(frame, 1)
+            # comment out for video out file
+            frame = cv2.flip(frame, 0)
             # resize smaller for faster processing
             # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
             small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
