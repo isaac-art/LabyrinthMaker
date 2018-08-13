@@ -41,8 +41,8 @@ class LabyrinthMaker():
         self.saturation = 5
 
         # KINECT VALS
-        self.kinect_threshold = 100
-        self.kinect_current_depth = 0
+        self.kinect_threshold = 474
+        self.kinect_current_depth = 45
     
 
 
@@ -63,7 +63,7 @@ class LabyrinthMaker():
         # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         small_depth = cv2.resize(depth, (0, 0), fx=sz, fy=sz)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
-        small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+        # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
         self.l_frame = small
         if not bw:
             return small
@@ -118,15 +118,15 @@ class LabyrinthMaker():
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
-        cv2.createTrackbar('threshold', 'gui', 260, 500, self.kinect_change_threshold)
-        cv2.createTrackbar('depth', 'gui', 350, 2048, self.kinect_change_depth)
-        cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
+        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 500, self.kinect_change_threshold)
+        cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
+        # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
 
 
     # DRAW CAMERA IMAGE
     def draw_cam(self):
         # draws the camera to a second window
-        bg = self.process_cam(0.5, 1, bw=False)
+        bg = self.process_cam(0.5, 0, bw=False)
         cv2.namedWindow("camera")
         # cv2.moveWindow("camera", 0, 0)
         cv2.imshow("camera", bg)
@@ -134,7 +134,7 @@ class LabyrinthMaker():
     # DRAW DEPTH IMAGE
     def draw_depth(self):
         # draws the camera to a second window
-        bg = self.process_cam(0.5, 1, bw=True, sm_dp=True)
+        bg = self.process_cam(0.5, 0, bw=True, sm_dp=True)
         cv2.namedWindow("depth")
         cv2.imshow("depth", bg)
 
@@ -143,15 +143,15 @@ class LabyrinthMaker():
         if self.mask is not None:
 
             # saturate
-            l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
-            h, s, v = cv2.split(l_frame_hsv)
-            s = s * self.saturation
-            s = np.clip(s, 0, 255)
-            l_frame_hsv = cv2.merge([h, s, v])
-            self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
+            # l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
+            # h, s, v = cv2.split(l_frame_hsv)
+            # s = s * self.saturation
+            # s = np.clip(s, 0, 255)
+            # l_frame_hsv = cv2.merge([h, s, v])
+            # self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
 
             # Blur the camera image 
-            self.l_frame = cv2.blur(self.l_frame, (13, 13))
+            # self.l_frame = cv2.blur(self.l_frame, (6, 6))
 
             # glPointSize(13.333*2)   
             glPointSize(13.333)
@@ -161,7 +161,7 @@ class LabyrinthMaker():
                     if not self.mask.cell_at(r, c):
                         bb, gg, rr = self.l_frame[r, c]
                         glColor3f(rr/255, gg/255, bb/255)
-                        glVertex2f((c+0.5)*13.333, (r+0.5)*13.333)
+                        glVertex2f((c+0.5)*(13.333), (r+0.5)*(13.333))
                         # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
                         # bb, gg, rr = self.l_frame[r+1, c+1]
                         # glColor3f(rr/255, gg/255, bb/255)
@@ -213,7 +213,7 @@ class LabyrinthMaker():
     # LABYRINTH UPDATE LOOP
     def update(self):
         # update the labyrinth from camera image
-        bg = self.process_cam(0.15, 1)
+        bg = self.process_cam(0.15, 0)
         # if not first frame
         if self.l_bg is not None:
             # calculate the average of the current bg
@@ -221,7 +221,7 @@ class LabyrinthMaker():
             # compare to the last stored average
             diff = average - self.l_average
             # if there is a big enough difference +/-
-            if diff > 1.65 or diff < -1.65:
+            if diff > 0.65 or diff < -0.65:
 
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
@@ -267,7 +267,7 @@ class LabyrinthMaker():
         self.draw_mask()
         self.draw_laby()
         # self.save_frame()
-        # self.draw_cam()
+        self.draw_cam()
         self.draw_depth()
         self.draw_gui()
         self.f_num = self.f_num + 1
@@ -291,7 +291,7 @@ class LabyrinthMaker():
             glfw.poll_events()
         glfw.terminate()
 
-# make labyrinth obj
+# init labyrinth
 labyrinth = LabyrinthMaker()
 # start the whole thing up
 labyrinth.main()
