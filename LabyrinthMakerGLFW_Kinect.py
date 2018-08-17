@@ -65,6 +65,21 @@ class LabyrinthMaker():
         small_depth = cv2.resize(depth, (0, 0), fx=sz, fy=sz)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
         # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+
+        # UNDISTORT HERE?
+        # need to undistort the rgb and the depth. 
+        # or should i destort before cropping and scaling???
+        # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
+        # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
+
+        # rgb_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
+        # rgb_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
+        # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
+        # depth_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
+
+        # rgb_undistorted = cv2.undistort(small, cameraMatrix, distCoeffs[, dst[, cameraMatrix]])
+        # depth_undistorted = cv2.undistort(small, cameraMatrix, distCoeffs[, dst[, cameraMatrix]])
+
         self.l_frame = small
         if not bw:
             return small
