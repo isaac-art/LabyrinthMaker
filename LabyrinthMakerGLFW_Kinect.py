@@ -39,6 +39,7 @@ class LabyrinthMaker():
         self.mask = None 
         self.f_num = 0
         self.saturation = 5
+        self.point_size = 13.333
 
         # KINECT VALS
         self.kinect_threshold = 474
@@ -81,7 +82,7 @@ class LabyrinthMaker():
         # kernel size is size of operation
         kernel = np.ones((1, 1), np.uint8)
         opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
-        bg = cv2.dilate(opening, kernel, iterations=3)
+        bg = cv2.dilate(opening, kernel, iterations=5)
         return bg
 
 
@@ -151,22 +152,31 @@ class LabyrinthMaker():
             # self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
 
             # Blur the camera image 
-            # self.l_frame = cv2.blur(self.l_frame, (6, 6))
+            self.l_frame = cv2.blur(self.l_frame, (int(self.point_size), int(self.point_size)))
 
             # glPointSize(13.333*2)   
-            glPointSize(13.333)
+            glPointSize(self.point_size)
             glBegin(GL_POINTS)
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
                         if r-3 < self.mask.rows and c-3 > 0:
                             bb, gg, rr = self.l_frame[r-3, c-3]
-                            glColor3f(rr/255, gg/255, bb/255)
-                            glVertex2f((c+0.5)*(13.333), (r+0.5)*(13.333))
-                            # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
-                            # bb, gg, rr = self.l_frame[r+1, c+1]
-                            # glColor3f(rr/255, gg/255, bb/255)
-                            # glVertex2f(c*13.333+12, r*13.333+12)
+                        elif r-2 < self.mask.rows and c-2 > 0:
+                            bb, gg, rr = self.l_frame[r-2, c-2]
+                        elif r-1 < self.mask.rows and c-1 > 0:
+                            bb, gg, rr = self.l_frame[r-1, c-1]
+                        else:
+                            bb, gg, rr = self.l_frame[r, c]
+
+
+                        glColor3f(rr/255, gg/255, bb/255)
+                        # offsetby 0.5 to fit colours inside mask
+                        glVertex2f((c+0.5)*(self.point_size), (r+0.5)*(self.point_size))
+                        # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
+                        # bb, gg, rr = self.l_frame[r+1, c+1]
+                        # glColor3f(rr/255, gg/255, bb/255)
+                        # glVertex2f(c*13.333+12, r*13.333+12)
             glEnd()
 
 
@@ -268,9 +278,9 @@ class LabyrinthMaker():
         self.draw_mask()
         self.draw_laby()
         # self.save_frame()
-        self.draw_cam()
-        self.draw_depth()
-        self.draw_gui()
+        # self.draw_cam()
+        # self.draw_depth()
+        # self.draw_gui()
         self.f_num = self.f_num + 1
 
     # MAKE GLFW WINDOW AND START THE LOOP
