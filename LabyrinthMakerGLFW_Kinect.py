@@ -159,13 +159,14 @@ class LabyrinthMaker():
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
-                        bb, gg, rr = self.l_frame[r, c]
-                        glColor3f(rr/255, gg/255, bb/255)
-                        glVertex2f((c+0.5)*(13.333), (r+0.5)*(13.333))
-                        # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
-                        # bb, gg, rr = self.l_frame[r+1, c+1]
-                        # glColor3f(rr/255, gg/255, bb/255)
-                        # glVertex2f(c*13.333+12, r*13.333+12)
+                        if r-3 < self.mask.rows and c-3 > 0:
+                            bb, gg, rr = self.l_frame[r-3, c-3]
+                            glColor3f(rr/255, gg/255, bb/255)
+                            glVertex2f((c+0.5)*(13.333), (r+0.5)*(13.333))
+                            # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
+                            # bb, gg, rr = self.l_frame[r+1, c+1]
+                            # glColor3f(rr/255, gg/255, bb/255)
+                            # glVertex2f(c*13.333+12, r*13.333+12)
             glEnd()
 
 
@@ -222,7 +223,7 @@ class LabyrinthMaker():
             diff = average - self.l_average
             # if there is a big enough difference +/-
             if diff > 0.65 or diff < -0.65:
-
+            # if True:
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
 
