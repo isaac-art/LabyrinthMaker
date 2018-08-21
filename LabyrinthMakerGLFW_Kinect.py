@@ -52,11 +52,41 @@ class LabyrinthMaker():
         # get the frame
         # frame, timestamp = self.cap.read()
         # ret, frame = self.cap.read()
-        depth = self.kinect_get_depth()
         frame = self.kinect_get_image()
+        depth = self.kinect_get_depth()
+
+        # UNDISTORT HERE?
+        # need to undistort the rgb and the depth. 
+        # or should i distort before cropping and scaling???
+        # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
+        # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
+
+        # rgb_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
+        # rgb_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
+        # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
+        # depth_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
+
+        rgb_camera_matrix = np.array([[5.2161910696979987e+02, 0.0, 3.1755491910920682e+02], 
+                            [0.0, 5.2132946256749767e+02, 2.5921654718027673e+02], 
+                            [0.0, 0.0, 1.0]])
+
+        rgb_dist_coeffs = np.array([[2.5673002693536984e-01, -9.3976085633794137e-01, -1.8605549188751580e-03, -2.2232238578189420e-03, 1.2453643444153988e+00]])
+
+        depth_camera_matrix = np.array([[5.8818670481438744e+02, 0.0, 3.1076280589210484e+02], 
+                                [0.0, 5.8724220649505514e+02, 2.2887144980135292e+02], 
+                                [0.0, 0.0, 1.0]])
+
+        depth_dist_coeffs = np.array([[-1.8932947734719333e-01, 1.1358015104098631e+00, -4.4260345347128536e-03, -5.4869578635708153e-03, -2.2460143607712921e+00]])
+
+        rgb_undistorted = cv2.undistort(frame, rgb_camera_matrix, rgb_dist_coeffs, None, rgb_camera_matrix)
+
+        depth_undistorted = cv2.undistort(depth, depth_camera_matrix, depth_dist_coeffs, None, depth_camera_matrix)
+
+
         # crop to correct ratio
-        depth = depth[0:360, 0:640]
-        frame = frame[0:360, 0:640]
+        frame = rgb_undistorted[0:360, 0:640]
+        depth = depth_undistorted[0:360, 0:640]
+
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         depth = cv2.flip(depth, flip)
@@ -66,19 +96,6 @@ class LabyrinthMaker():
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
         # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
 
-        # UNDISTORT HERE?
-        # need to undistort the rgb and the depth. 
-        # or should i destort before cropping and scaling???
-        # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
-        # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
-
-        # rgb_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
-        # rgb_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
-        # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
-        # depth_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
-
-        # rgb_undistorted = cv2.undistort(small, cameraMatrix, distCoeffs[, dst[, cameraMatrix]])
-        # depth_undistorted = cv2.undistort(small, cameraMatrix, distCoeffs[, dst[, cameraMatrix]])
 
         self.l_frame = small
         if not bw:
@@ -167,7 +184,7 @@ class LabyrinthMaker():
             # self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
 
             # Blur the camera image 
-            self.l_frame = cv2.blur(self.l_frame, (int(self.point_size), int(self.point_size)))
+            self.l_frame = cv2.blur(self.l_frame, (int(self.point_size/2), int(self.point_size/2)))
 
             # glPointSize(13.333*2)   
             glPointSize(self.point_size)
@@ -175,15 +192,16 @@ class LabyrinthMaker():
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
-                        if r-3 < self.mask.rows and c-3 > 0:
-                            bb, gg, rr = self.l_frame[r-3, c-3]
-                        elif r-2 < self.mask.rows and c-2 > 0:
-                            bb, gg, rr = self.l_frame[r-2, c-2]
-                        elif r-1 < self.mask.rows and c-1 > 0:
-                            bb, gg, rr = self.l_frame[r-1, c-1]
-                        else:
-                            bb, gg, rr = self.l_frame[r, c]
-
+                        # if r-3 < self.mask.rows and c-3 > 0:
+                        #     bb, gg, rr = self.l_frame[r-3, c-3]
+                        # elif r-2 < self.mask.rows and c-2 > 0:
+                        #     bb, gg, rr = self.l_frame[r-2, c-2]
+                        # elif r-1 < self.mask.rows and c-1 > 0:
+                        #     bb, gg, rr = self.l_frame[r-1, c-1]
+                        # else:
+                        #     bb, gg, rr = self.l_frame[r, c]
+                        
+                        bb, gg, rr = self.l_frame[r, c]
 
                         glColor3f(rr/255, gg/255, bb/255)
                         # offsetby 0.5 to fit colours inside mask
@@ -293,9 +311,9 @@ class LabyrinthMaker():
         self.draw_mask()
         self.draw_laby()
         # self.save_frame()
-        # self.draw_cam()
-        # self.draw_depth()
-        # self.draw_gui()
+        self.draw_cam()
+        self.draw_depth()
+        self.draw_gui()
         self.f_num = self.f_num + 1
 
     # MAKE GLFW WINDOW AND START THE LOOP
