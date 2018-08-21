@@ -61,6 +61,10 @@ class LabyrinthMaker():
         # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
         # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
 
+        # 
+        # https://medium.com/@kennethjiang/calibrate-fisheye-lens-using-opencv-333b05afa0b0
+        # 
+
         # rgb_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
         # rgb_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
         # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
