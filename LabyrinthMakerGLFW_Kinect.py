@@ -55,9 +55,8 @@ class LabyrinthMaker():
         frame = self.kinect_get_image()
         depth = self.kinect_get_depth()
 
-        # UNDISTORT HERE?
-        # need to undistort the rgb and the depth. 
-        # or should i distort before cropping and scaling???
+        # UNDISTORT HERE
+        # need to undistort the rgb and the depth before cropping/flipping/scaling
         # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
         # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
 
@@ -101,9 +100,9 @@ class LabyrinthMaker():
         # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
 
 
-        self.l_frame = small
+        self.l_frame = frame
         if not bw:
-            return small
+            return frame
         if sm_dp:
             return small_depth
         # grayscale image, alreay gray if kinect
