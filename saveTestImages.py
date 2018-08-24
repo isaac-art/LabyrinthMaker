@@ -27,8 +27,10 @@ def main():
     while 1:
         if mode == "ir":
             frame = kinect_get_ir()
+            print(frame)
         else:
             frame = kinect_get_video()
+            print(frame)
 
         cv2.imshow(mode, frame)
         

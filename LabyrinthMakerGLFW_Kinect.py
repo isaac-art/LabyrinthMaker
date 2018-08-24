@@ -69,11 +69,12 @@ class LabyrinthMaker():
         # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
         # depth_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
 
-        rgb_camera_matrix = np.array([[5.2161910696979987e+02, 0.0, 3.1755491910920682e+02], 
-                            [0.0, 5.2132946256749767e+02, 2.5921654718027673e+02], 
+        # SEE calibrate.py to get these values
+        rgb_camera_matrix = np.array([[5.204374709026797063e+02, 0.0, 3.204917591290805490e+02],
+                            [0.0, 5.212435824690201116e+02, 2.679794167451566977e+02], 
                             [0.0, 0.0, 1.0]])
 
-        rgb_dist_coeffs = np.array([[2.5673002693536984e-01, -9.3976085633794137e-01, -1.8605549188751580e-03, -2.2232238578189420e-03, 1.2453643444153988e+00]])
+        rgb_dist_coeffs = np.array([[2.145478879452796250e-01, -7.239723873811023669e-01, -3.261886134846941855e-04, 8.164634327370430501e-04, 8.526327834328302213e-01]])
 
         depth_camera_matrix = np.array([[5.8818670481438744e+02, 0.0, 3.1076280589210484e+02], 
                                 [0.0, 5.8724220649505514e+02, 2.2887144980135292e+02], 
@@ -86,7 +87,7 @@ class LabyrinthMaker():
         depth_undistorted = cv2.undistort(depth, depth_camera_matrix, depth_dist_coeffs, None, depth_camera_matrix)
 
 
-        # crop to correct ratio
+        # crop to correct ratio 16:9 for the monitor
         frame = rgb_undistorted[0:360, 0:640]
         depth = depth_undistorted[0:360, 0:640]
 
