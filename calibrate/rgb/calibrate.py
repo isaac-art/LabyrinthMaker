@@ -25,7 +25,7 @@ for fname in images:
     # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, (10, 7), None)
 
-    # If found, add object points, image points (after refining them)
+    # If found, add object points, image points
     if ret == True:
         objpoints.append(objp)
 
@@ -44,25 +44,24 @@ for fname in images:
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 
 # SAVE TO FILE
+# save the matrix and distortion to csv files for easy viewing
 np.savetxt('mtx.csv', mtx, delimiter=',')
 np.savetxt('dist.csv', dist, delimiter=',')
+# save the rest to numpy files as it is multidimensional
 np.save('rvecs.npy', rvecs)
 np.save('tvecs.npy', tvecs)
 
-
 # TEST  UNDISTORT
-
-
-img = cv2.imread('calibtest_a.png')
+img = cv2.imread('14_copy.png')
 h,  w = img.shape[:2]
 newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
 print(roi)
 
 # undistort
 dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
-# crop the image
-# x, y, w, h = roi
-# dst = dst[y:y+h, x:x+w]
+# crop the image to roi
+x, y, w, h = roi
+dst = dst[y:y+h, x:x+w]
 cv2.imwrite('calibresult_0.png', dst)
 
 

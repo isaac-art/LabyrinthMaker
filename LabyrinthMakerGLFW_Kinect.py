@@ -42,10 +42,15 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 474
-        self.kinect_current_depth = 45
+        self.kinect_threshold = 515
+        self.kinect_current_depth = 0
     
-
+        # image translation
+        self.depth_scale = 86
+        self.depth_hori = 604
+        self.depth_vert = 380
+        self.rgb_hori = 640
+        self.rgb_vert = 419
 
     # PROCESS THE CAMERA INPUT
     def process_cam(self, sz, flip, bw=True, sm_dp=False):
@@ -82,9 +87,26 @@ class LabyrinthMaker():
 
         depth_dist_coeffs = np.array([[-1.8932947734719333e-01, 1.1358015104098631e+00, -4.4260345347128536e-03, -5.4869578635708153e-03, -2.2460143607712921e+00]])
 
+
+        # THIS MIGHT NOT WORK -  GET ROI
+        # rgb_h,  rgb_w = frame.shape[:2]
+        # rgb_newcameramtx, rgb_roi=cv2.getOptimalNewCameraMatrix(rgb_camera_matrix, rgb_dist_coeffs, (rgb_w, rgb_h), 1, (rgb_w,rgb_h))
+
+        # depth_h,  depth_w = depth.shape[:2]
+        # depth_newcameramtx, depth_roi=cv2.getOptimalNewCameraMatrix(depth_camera_matrix, depth_dist_coeffs, (depth_w, depth_h), 1, (depth_w,depth_h))
+
+
+        # UNDISTORT THE IMAGES
         rgb_undistorted = cv2.undistort(frame, rgb_camera_matrix, rgb_dist_coeffs, None, rgb_camera_matrix)
 
         depth_undistorted = cv2.undistort(depth, depth_camera_matrix, depth_dist_coeffs, None, depth_camera_matrix)
+
+
+        # # THIS MIGHT NOT WORK - CROP TO CORRECTED ROI
+        # rgb_x, rgb_y, rgb_w, rgb_h = rgb_roi
+        # frame = frame[rgb_y:rgb_y+rgb_h, rgb_x:rgb_x+rgb_w]
+        # depth_x, depth_y, depth_w, depth_h = depth_roi
+        # depth = depth[depth_y:depth_y+depth_h, depth_x:depth_x+depth_w]
 
 
         # crop to correct ratio 16:9 for the monitor
@@ -94,16 +116,39 @@ class LabyrinthMaker():
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         depth = cv2.flip(depth, flip)
+
+        # translate for alignment
+        frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
+        frame = cv2.warpAffine(frame, frame_M, (640, 360))
+        depth_M = np.float32([[1,0,self.depth_hori-640],[0,1,self.depth_vert-360]])
+        depth = cv2.warpAffine(depth, depth_M, (640, 360))
+
+        # SCALE the depth camera to fit the shapes
+        dsz = self.depth_scale/100
+        depth = cv2.resize(depth, (0,0), fx=dsz, fy=dsz)
+        dh, dw = depth.shape
+        tb = 640-dw
+        lr = 360-dh
+        depth = cv2.copyMakeBorder(depth, tb, tb, lr, lr, cv2.BORDER_CONSTANT)
+        # frame = cv2.copyMakeBorder(frame, 640-dw, 640-dw, 360-dh, 360-dh, cv2.BORDER_CONSTANT)
+
+        # crop back to size before rescale
+        frame = frame[0:360, 0:640]
+        topbot = int(tb/2)
+        depth = depth[topbot:360+topbot, 0:640]
+
+        # print(depth.shape)
+
         # resize smaller for faster processing
         # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         small_depth = cv2.resize(depth, (0, 0), fx=sz, fy=sz)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
         # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+        
 
-
-        self.l_frame = frame
+        self.l_frame = small
         if not bw:
-            return frame
+            return small
         if sm_dp:
             return small_depth
         # grayscale image, alreay gray if kinect
@@ -152,11 +197,34 @@ class LabyrinthMaker():
     def change_saturation(self, value):
         self.saturation = value
 
+    def change_rgb_hori(self, value):
+        self.rgb_hori = value
+
+    def change_rgb_vert(self, value):
+        self.rgb_vert = value
+
+
+    def change_depth_hori(self, value):
+        self.depth_hori = value
+
+    def change_depth_vert(self, value):
+        self.depth_vert = value
+
+    def change_depth_scale(self, value):
+        self.depth_scale = value
+
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
-        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 500, self.kinect_change_threshold)
+        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 600, self.kinect_change_threshold)
         cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
+
+        cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
+        cv2.createTrackbar('rgb-vert', 'gui', self.rgb_vert, 360*2, self.change_rgb_vert)
+
+        cv2.createTrackbar('depth-hori', 'gui', self.depth_hori, 640*2, self.change_depth_hori)
+        cv2.createTrackbar('depth-vert', 'gui', self.depth_vert, 360*2, self.change_depth_vert)
+        cv2.createTrackbar('depth-scale', 'gui', self.depth_scale, 100, self.change_depth_scale)
         # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
 
 
@@ -205,15 +273,20 @@ class LabyrinthMaker():
                         # else:
                         #     bb, gg, rr = self.l_frame[r, c]
                         
-                        bb, gg, rr = self.l_frame[r, c]
+                        try:
+                            bb, gg, rr = self.l_frame[r, c]
 
-                        glColor3f(rr/255, gg/255, bb/255)
-                        # offsetby 0.5 to fit colours inside mask
-                        glVertex2f((c+0.5)*(self.point_size), (r+0.5)*(self.point_size))
-                        # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
-                        # bb, gg, rr = self.l_frame[r+1, c+1]
-                        # glColor3f(rr/255, gg/255, bb/255)
-                        # glVertex2f(c*13.333+12, r*13.333+12)
+                            glColor3f(rr/255, gg/255, bb/255)
+                            # offsetby 0.5 to fit colours inside mask
+                            glVertex2f((c+0.5)*(self.point_size), (r+0.5)*(self.point_size))
+                            # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
+                            # bb, gg, rr = self.l_frame[r+1, c+1]
+                            # glColor3f(rr/255, gg/255, bb/255)
+                            # glVertex2f(c*13.333+12, r*13.333+12)
+                        except Exception as e:
+                            print(e)
+                            pass
+
             glEnd()
 
 
@@ -223,7 +296,8 @@ class LabyrinthMaker():
         # set the line width for drawing
         glLineWidth(1)
         # set the color of the line
-        glColor3f(0.1, 0.1, 0.2)
+        # glColor3f(0.1, 0.1, 0.2)
+        glColor3f(1.0, 1.0, 1.0)
         # begin shape with pairs of lines
         glBegin(GL_LINES)
         # the list of points is backwards so reverse it
@@ -307,7 +381,7 @@ class LabyrinthMaker():
 
     # THE GL DRAW LOOP
     def draw(self):
-        glClearColor(1, 1, 1, 1)
+        glClearColor(0.1, 0.1, 0.1, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         self.refresh_scene()
