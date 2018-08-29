@@ -25,7 +25,8 @@ class LabyrinthMaker():
         # WEBCAM SETUP
         # self.cap = cv2.VideoCapture(0)
 
-
+        # DAY AND NIGHT
+        #  SWITCH COLORING DEPENDING ON TIME OF DAY
         
         # LABY and GL 
         self.laby = []
@@ -42,7 +43,7 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 515
+        self.kinect_threshold = 544
         self.kinect_current_depth = 0
     
         # image translation
@@ -51,6 +52,8 @@ class LabyrinthMaker():
         self.depth_vert = 380
         self.rgb_hori = 640
         self.rgb_vert = 419
+
+        self.colour_mode = 0
 
     # PROCESS THE CAMERA INPUT
     def process_cam(self, sz, flip, bw=True, sm_dp=False):
@@ -213,6 +216,10 @@ class LabyrinthMaker():
     def change_depth_scale(self, value):
         self.depth_scale = value
 
+
+    def change_colour_mode(self, value):
+        self.colour_mode = value
+
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
@@ -227,6 +234,8 @@ class LabyrinthMaker():
         cv2.createTrackbar('depth-scale', 'gui', self.depth_scale, 100, self.change_depth_scale)
         # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
 
+
+        cv2.createTrackbar('colour-mode', 'gui', self.colour_mode, 1, self.change_colour_mode)
 
     # DRAW CAMERA IMAGE
     def draw_cam(self):
@@ -264,15 +273,6 @@ class LabyrinthMaker():
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
                     if not self.mask.cell_at(r, c):
-                        # if r-3 < self.mask.rows and c-3 > 0:
-                        #     bb, gg, rr = self.l_frame[r-3, c-3]
-                        # elif r-2 < self.mask.rows and c-2 > 0:
-                        #     bb, gg, rr = self.l_frame[r-2, c-2]
-                        # elif r-1 < self.mask.rows and c-1 > 0:
-                        #     bb, gg, rr = self.l_frame[r-1, c-1]
-                        # else:
-                        #     bb, gg, rr = self.l_frame[r, c]
-                        
                         try:
                             bb, gg, rr = self.l_frame[r, c]
 
@@ -296,8 +296,10 @@ class LabyrinthMaker():
         # set the line width for drawing
         glLineWidth(1)
         # set the color of the line
-        # glColor3f(0.1, 0.1, 0.2)
-        glColor3f(1.0, 1.0, 1.0)
+        if self.colour_mode == 0:
+            glColor3f(1.0, 1.0, 1.0)
+        else:
+            glColor3f(0.1, 0.1, 0.2)
         # begin shape with pairs of lines
         glBegin(GL_LINES)
         # the list of points is backwards so reverse it
@@ -381,7 +383,11 @@ class LabyrinthMaker():
 
     # THE GL DRAW LOOP
     def draw(self):
-        glClearColor(0.1, 0.1, 0.1, 1)
+        if self.colour_mode == 0:
+            glClearColor(0.0, 0.0, 0.0, 1)
+        else:
+            glClearColor(1.0, 1.0, 1.0, 1)
+    
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         self.refresh_scene()
