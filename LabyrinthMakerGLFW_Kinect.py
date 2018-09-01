@@ -43,7 +43,7 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 522
+        self.kinect_threshold = 628
         self.kinect_current_depth = 0
     
         # image translation
@@ -55,23 +55,23 @@ class LabyrinthMaker():
 
         self.colour_mode = 0
 
-        self.src_pts_1x = 0 
-        self.src_pts_1y = 44
-        self.src_pts_2x = 639
-        self.src_pts_2y = 30
-        self.src_pts_3x = 0
-        self.src_pts_3y = 442
-        self.src_pts_4x = 639
-        self.src_pts_4y = 437
+        self.src_pts_1x = 0
+        self.src_pts_1y = 67
+        self.src_pts_2x = 605
+        self.src_pts_2y = 72
+        self.src_pts_3x = 14
+        self.src_pts_3y = 398
+        self.src_pts_4x = 594
+        self.src_pts_4y = 396
 
         self.dp_pts_1x = 0 
-        self.dp_pts_1y = 0
+        self.dp_pts_1y = 81
         self.dp_pts_2x = 639
-        self.dp_pts_2y = 0
+        self.dp_pts_2y = 67
         self.dp_pts_3x = 0
-        self.dp_pts_3y = 434
+        self.dp_pts_3y = 463
         self.dp_pts_4x = 639
-        self.dp_pts_4y = 434
+        self.dp_pts_4y = 467
 
 
     # PROCESS THE CAMERA INPUT
@@ -314,7 +314,7 @@ class LabyrinthMaker():
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
-        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 600, self.kinect_change_threshold)
+        cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 900, self.kinect_change_threshold)
         cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
         # cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
         # cv2.createTrackbar('rgb-vert', 'gui', self.rgb_vert, 360*2, self.change_rgb_vert)
@@ -490,6 +490,13 @@ class LabyrinthMaker():
 
     # THE GL DRAW LOOP
     def draw(self):
+        if self.f_num % 1500 == 0:
+            self.f_num = 0
+            if self.colour_mode == 0:
+                self.colour_mode = 1
+            else:
+                self.colour_mode = 0
+
         if self.colour_mode == 0:
             glClearColor(0.0, 0.0, 0.0, 1)
         else:
@@ -502,9 +509,9 @@ class LabyrinthMaker():
         self.draw_mask()
         self.draw_laby()
         # self.save_frame()
-        self.draw_cam()
-        self.draw_depth()
-        self.draw_gui()
+        # self.draw_cam()
+        # self.draw_depth()
+        # self.draw_gui()
         self.f_num = self.f_num + 1
 
     # MAKE GLFW WINDOW AND START THE LOOP
@@ -514,12 +521,22 @@ class LabyrinthMaker():
         # http://www.glfw.org/docs/latest/monitor_guide.html#monitor_monitors
         # monitor = glfw.get_primary_monitor()
         # mode = monitor.video_mode
-        window = glfw.create_window(self.width, self.height, "LabyrinthMaker_GLFW", None, None)
+
+        monitors = glfw.get_monitors()
+        # print(monitors)
+
+        window = glfw.create_window(self.width, self.height, "LabyrinthMaker_GLFW", monitors[1], None)
+
         if not window:
             glfw.terminate()
             return
         glfw.make_context_current(window)
+
         while not glfw.window_should_close(window):
+            # set cursor position because of remote login
+            # as this runs all the time mouse is essentially dead
+            # so youll have to 'killall python' to get out
+            glfw.set_cursor_pos(window, 2000, 0)
             # render
             self.draw()
             glfw.swap_buffers(window)
