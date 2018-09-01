@@ -9,7 +9,7 @@ global f_num
 f_num = 0
 
 global mode
-mode = "rgb"
+mode = "ir"
 
 def kinect_get_video():
     return frame_convert2.video_cv(freenect.sync_get_video()[0])

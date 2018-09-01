@@ -43,17 +43,36 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 544
+        self.kinect_threshold = 522
         self.kinect_current_depth = 0
     
         # image translation
-        self.depth_scale = 86
-        self.depth_hori = 604
-        self.depth_vert = 380
+        self.depth_scale = 90
+        self.depth_hori = 623
+        self.depth_vert = 329
         self.rgb_hori = 640
-        self.rgb_vert = 419
+        self.rgb_vert = 363
 
         self.colour_mode = 0
+
+        self.src_pts_1x = 0 
+        self.src_pts_1y = 44
+        self.src_pts_2x = 639
+        self.src_pts_2y = 30
+        self.src_pts_3x = 0
+        self.src_pts_3y = 442
+        self.src_pts_4x = 639
+        self.src_pts_4y = 437
+
+        self.dp_pts_1x = 0 
+        self.dp_pts_1y = 0
+        self.dp_pts_2x = 639
+        self.dp_pts_2y = 0
+        self.dp_pts_3x = 0
+        self.dp_pts_3y = 434
+        self.dp_pts_4x = 639
+        self.dp_pts_4y = 434
+
 
     # PROCESS THE CAMERA INPUT
     def process_cam(self, sz, flip, bw=True, sm_dp=False):
@@ -113,32 +132,51 @@ class LabyrinthMaker():
 
 
         # crop to correct ratio 16:9 for the monitor
-        frame = rgb_undistorted[0:360, 0:640]
-        depth = depth_undistorted[0:360, 0:640]
+        # frame = rgb_undistorted[0:360, 0:640]
+        # depth = depth_undistorted[0:360, 0:640]
 
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         depth = cv2.flip(depth, flip)
 
+        pts_src = np.array([[self.src_pts_1x, self.src_pts_1y], 
+                            [self.src_pts_2x, self.src_pts_2y], 
+                            [self.src_pts_3x, self.src_pts_3y],
+                            [self.src_pts_4x, self.src_pts_4y]])
+
+        pts_dst = np.array([[0, 0],[639, 0],[0, 359],[639, 359]])
+        hom, status = cv2.findHomography(pts_src, pts_dst)
+        frame = cv2.warpPerspective(frame, hom, (640, 360))
+
+        
+        pts_src = np.array([[self.dp_pts_1x, self.dp_pts_1y], 
+                            [self.dp_pts_2x, self.dp_pts_2y], 
+                            [self.dp_pts_3x, self.dp_pts_3y],
+                            [self.dp_pts_4x, self.dp_pts_4y]])
+
+        pts_dst = np.array([[0, 0],[639, 0],[0, 359],[639, 359]])
+        hom, status = cv2.findHomography(pts_src, pts_dst)
+        depth = cv2.warpPerspective(depth, hom, (640, 360))
+        # OLD PERSPECTIVE CORRECTION
         # translate for alignment
-        frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
-        frame = cv2.warpAffine(frame, frame_M, (640, 360))
-        depth_M = np.float32([[1,0,self.depth_hori-640],[0,1,self.depth_vert-360]])
-        depth = cv2.warpAffine(depth, depth_M, (640, 360))
+        # frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
+        # frame = cv2.warpAffine(frame, frame_M, (640, 360))
+        # depth_M = np.float32([[1,0,self.depth_hori-640],[0,1,self.depth_vert-360]])
+        # depth = cv2.warpAffine(depth, depth_M, (640, 360))
 
-        # SCALE the depth camera to fit the shapes
-        dsz = self.depth_scale/100
-        depth = cv2.resize(depth, (0,0), fx=dsz, fy=dsz)
-        dh, dw = depth.shape
-        tb = 640-dw
-        lr = 360-dh
-        depth = cv2.copyMakeBorder(depth, tb, tb, lr, lr, cv2.BORDER_CONSTANT)
-        # frame = cv2.copyMakeBorder(frame, 640-dw, 640-dw, 360-dh, 360-dh, cv2.BORDER_CONSTANT)
+        # # SCALE the depth camera to fit the shapes
+        # dsz = self.depth_scale/100
+        # depth = cv2.resize(depth, (0,0), fx=dsz, fy=dsz)
+        # dh, dw = depth.shape
+        # tb = 640-dw
+        # lr = 360-dh
+        # depth = cv2.copyMakeBorder(depth, tb, tb, lr, lr, cv2.BORDER_CONSTANT)
+        # # frame = cv2.copyMakeBorder(frame, 640-dw, 640-dw, 360-dh, 360-dh, cv2.BORDER_CONSTANT)
 
-        # crop back to size before rescale
-        frame = frame[0:360, 0:640]
-        topbot = int(tb/2)
-        depth = depth[topbot:360+topbot, 0:640]
+        # # crop back to size before rescale
+        # frame = frame[0:360, 0:640]
+        # topbot = int(tb/2)
+        # depth = depth[topbot:360+topbot, 0:640]
 
         # print(depth.shape)
 
@@ -183,6 +221,14 @@ class LabyrinthMaker():
         # timestamp: int representing the time
         depth, timestamp = freenect.sync_get_depth()
 
+        # https://stackoverflow.com/questions/23901220/how-do-i-get-kinect-depth-image-data-in-centimeters-using-the-libfreenect-python
+        # freenect.set_depth_mode(mdev, freenect.RESOLUTION_MEDIUM, freenect.DEPTH_REGISTERED)
+        # something to do with this?
+
+        # or this
+        # https://github.com/amiller/libfreenect-goodies/blob/master/calibkinect.py
+        
+
         # filter depth range
         depth = 255 * np.logical_and(depth >= self.kinect_current_depth - self.kinect_threshold,
                                      depth <= self.kinect_current_depth + self.kinect_threshold)
@@ -196,7 +242,10 @@ class LabyrinthMaker():
         # timestamp: int representing the time
         img, timestamp = freenect.sync_get_video()
         return frame_convert2.video_cv(img)
-         
+
+
+    # SLIDER FUNCTIONS
+
     def change_saturation(self, value):
         self.saturation = value
 
@@ -216,26 +265,84 @@ class LabyrinthMaker():
     def change_depth_scale(self, value):
         self.depth_scale = value
 
-
     def change_colour_mode(self, value):
         self.colour_mode = value
+
+
+    def change_1x(self, value):
+        self.src_pts_1x = value    
+    def change_1y(self, value):
+        self.src_pts_1y = value
+
+    def change_2x(self, value):
+        self.src_pts_2x = value    
+    def change_2y(self, value):
+        self.src_pts_2y = value
+
+    def change_3x(self, value):
+        self.src_pts_3x = value    
+    def change_3y(self, value):
+        self.src_pts_3y = value
+
+    def change_4x(self, value):
+        self.src_pts_4x = value    
+    def change_4y(self, value):
+        self.src_pts_4y = value
+
+
+
+    def change_dp1x(self, value):
+        self.dp_pts_1x = value    
+    def change_dp1y(self, value):
+        self.dp_pts_1y = value
+
+    def change_dp2x(self, value):
+        self.dp_pts_2x = value    
+    def change_dp2y(self, value):
+        self.dp_pts_2y = value
+
+    def change_dp3x(self, value):
+        self.dp_pts_3x = value    
+    def change_dp3y(self, value):
+        self.dp_pts_3y = value
+
+    def change_dp4x(self, value):
+        self.dp_pts_4x = value    
+    def change_dp4y(self, value):
+        self.dp_pts_4y = value
 
     # KINECT CONTROLS GUI
     def draw_gui(self):  
         cv2.namedWindow("gui")
         cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 600, self.kinect_change_threshold)
         cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
-
-        cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
-        cv2.createTrackbar('rgb-vert', 'gui', self.rgb_vert, 360*2, self.change_rgb_vert)
-
-        cv2.createTrackbar('depth-hori', 'gui', self.depth_hori, 640*2, self.change_depth_hori)
-        cv2.createTrackbar('depth-vert', 'gui', self.depth_vert, 360*2, self.change_depth_vert)
-        cv2.createTrackbar('depth-scale', 'gui', self.depth_scale, 100, self.change_depth_scale)
-        # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
-
-
+        # cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
+        # cv2.createTrackbar('rgb-vert', 'gui', self.rgb_vert, 360*2, self.change_rgb_vert)
+        # cv2.createTrackbar('depth-hori', 'gui', self.depth_hori, 640*2, self.change_depth_hori)
+        # cv2.createTrackbar('depth-vert', 'gui', self.depth_vert, 360*2, self.change_depth_vert)
+        # cv2.createTrackbar('depth-scale', 'gui', self.depth_scale, 100, self.change_depth_scale)
+        # # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
+        
         cv2.createTrackbar('colour-mode', 'gui', self.colour_mode, 1, self.change_colour_mode)
+
+        cv2.createTrackbar('src_pts_1x', 'gui', self.src_pts_1x, 639, self.change_1x)
+        cv2.createTrackbar('src_pts_1y', 'gui', self.src_pts_1y, 479, self.change_1y)
+        cv2.createTrackbar('src_pts_2x', 'gui', self.src_pts_2x, 639, self.change_2x)
+        cv2.createTrackbar('src_pts_2y', 'gui', self.src_pts_2y, 479, self.change_2y)
+        cv2.createTrackbar('src_pts_3x', 'gui', self.src_pts_3x, 639, self.change_3x)
+        cv2.createTrackbar('src_pts_3y', 'gui', self.src_pts_3y, 479, self.change_3y)
+        cv2.createTrackbar('src_pts_4x', 'gui', self.src_pts_4x, 639, self.change_4x)
+        cv2.createTrackbar('src_pts_4y', 'gui', self.src_pts_4y, 479, self.change_4y)
+
+        cv2.createTrackbar('dp_pts_1x', 'gui', self.dp_pts_1x, 639, self.change_dp1x)
+        cv2.createTrackbar('dp_pts_1y', 'gui', self.dp_pts_1y, 479, self.change_dp1y)
+        cv2.createTrackbar('dp_pts_2x', 'gui', self.dp_pts_2x, 639, self.change_dp2x)
+        cv2.createTrackbar('dp_pts_2y', 'gui', self.dp_pts_2y, 479, self.change_dp2y)
+        cv2.createTrackbar('dp_pts_3x', 'gui', self.dp_pts_3x, 639, self.change_dp3x)
+        cv2.createTrackbar('dp_pts_3y', 'gui', self.dp_pts_3y, 479, self.change_dp3y)
+        cv2.createTrackbar('dp_pts_4x', 'gui', self.dp_pts_4x, 639, self.change_dp4x)
+        cv2.createTrackbar('dp_pts_4y', 'gui', self.dp_pts_4y, 479, self.change_dp4y)
+
 
     # DRAW CAMERA IMAGE
     def draw_cam(self):
