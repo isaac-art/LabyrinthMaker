@@ -1,6 +1,10 @@
 from random import choice, randint
 
 
+# AN ALTERNATIVE PATH MAKER
+# THIS DOES NOT PROVIDE ORTHOGANAL MAZES
+# SO CANNOT BE USED FOR MAKING UNICURSAL LABYRINTHS
+
 class Sidewinder():
 
     def on(grid):
