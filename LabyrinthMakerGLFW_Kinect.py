@@ -13,20 +13,35 @@ from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
+
+# HERE WE CREATE A LABYRINTH MAKER OBJECT
+# AND SET UP A DRAW AND UPDATE LOOP.
+
+# WE PROCESS KINECT DEPTH IMAGES USING OPEN CV
+# AND THEN SEND IT TO OUR MAZE MAKING SCRIPTS 
+# AS A MASK WHICH IS USED FOR GENERATING A LABYRINTH
+# THIS IS DRAWN USING OPENGL, AND USES THE
+# KINECT RGB IMAGE COLOURS AS FILL. 
+
+
+
 class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
         # store time for logging
         self.start = datetime.now()
 
+        # set running mode
+        self.mode = "PROD"
+        # self.mode = "DEBUG"
+
+        # HERE WE CAN SWITCH TO ALTERNATIVE CAMERAS
+
         # PS3EYECAM SETUP
         # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
 
         # WEBCAM SETUP
         # self.cap = cv2.VideoCapture(0)
-
-        # DAY AND NIGHT
-        #  SWITCH COLORING DEPENDING ON TIME OF DAY
         
         # LABY and GL 
         self.laby = []
@@ -53,8 +68,10 @@ class LabyrinthMaker():
         self.rgb_hori = 640
         self.rgb_vert = 363
 
+        # black on white = 0, or reverse = 1
         self.colour_mode = 0
 
+        # HOMOGRAPHY POSTIONS RGB
         self.src_pts_1x = 0
         self.src_pts_1y = 67
         self.src_pts_2x = 605
@@ -64,6 +81,7 @@ class LabyrinthMaker():
         self.src_pts_4x = 594
         self.src_pts_4y = 396
 
+        # HOMOGRAPHY POSTIONS DEPTH
         self.dp_pts_1x = 0 
         self.dp_pts_1y = 81
         self.dp_pts_2x = 639
@@ -77,25 +95,16 @@ class LabyrinthMaker():
     # PROCESS THE CAMERA INPUT
     def process_cam(self, sz, flip, bw=True, sm_dp=False):
         # get the frame
+
+        # pseye version 
         # frame, timestamp = self.cap.read()
         # ret, frame = self.cap.read()
+
         frame = self.kinect_get_image()
         depth = self.kinect_get_depth()
 
-        # UNDISTORT HERE
-        # need to undistort the rgb and the depth before cropping/flipping/scaling
-        # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_calib3d/py_calibration/py_calibration.html
-        # https://docs.opencv.org/3.0-beta/modules/imgproc/doc/geometric_transformations.html
-
-        # 
-        # https://medium.com/@kennethjiang/calibrate-fisheye-lens-using-opencv-333b05afa0b0
-        # 
-
-        # rgb_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
-        # rgb_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
-        # depth_camera_matrix = [[fx, 0, cx][0, fy, cy][0, 0, 1]]
-        # depth_dist_coeffs = (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) 
-
+        
+        # UNDISTORT THE CAMERA LENSES
         # SEE calibrate.py to get these values
         rgb_camera_matrix = np.array([[5.204374709026797063e+02, 0.0, 3.204917591290805490e+02],
                             [0.0, 5.212435824690201116e+02, 2.679794167451566977e+02], 
@@ -110,109 +119,104 @@ class LabyrinthMaker():
         depth_dist_coeffs = np.array([[-1.8932947734719333e-01, 1.1358015104098631e+00, -4.4260345347128536e-03, -5.4869578635708153e-03, -2.2460143607712921e+00]])
 
 
-        # THIS MIGHT NOT WORK -  GET ROI
-        # rgb_h,  rgb_w = frame.shape[:2]
-        # rgb_newcameramtx, rgb_roi=cv2.getOptimalNewCameraMatrix(rgb_camera_matrix, rgb_dist_coeffs, (rgb_w, rgb_h), 1, (rgb_w,rgb_h))
-
-        # depth_h,  depth_w = depth.shape[:2]
-        # depth_newcameramtx, depth_roi=cv2.getOptimalNewCameraMatrix(depth_camera_matrix, depth_dist_coeffs, (depth_w, depth_h), 1, (depth_w,depth_h))
-
-
-        # UNDISTORT THE IMAGES
+        # UNDISTORT THE FRAME AND DEPTH IMAGES
         rgb_undistorted = cv2.undistort(frame, rgb_camera_matrix, rgb_dist_coeffs, None, rgb_camera_matrix)
 
         depth_undistorted = cv2.undistort(depth, depth_camera_matrix, depth_dist_coeffs, None, depth_camera_matrix)
-
-
-        # # THIS MIGHT NOT WORK - CROP TO CORRECTED ROI
-        # rgb_x, rgb_y, rgb_w, rgb_h = rgb_roi
-        # frame = frame[rgb_y:rgb_y+rgb_h, rgb_x:rgb_x+rgb_w]
-        # depth_x, depth_y, depth_w, depth_h = depth_roi
-        # depth = depth[depth_y:depth_y+depth_h, depth_x:depth_x+depth_w]
-
 
         # crop to correct ratio 16:9 for the monitor
         # frame = rgb_undistorted[0:360, 0:640]
         # depth = depth_undistorted[0:360, 0:640]
 
+        # FLIP THE IMAGES DEPENDING ON SCREEN ORIENTATION
         # -1 flip hori+vert / 1 flip vert / 0 flip hori
         frame = cv2.flip(frame, flip)
         depth = cv2.flip(depth, flip)
 
+        # arrange the homography points for rgb image
         pts_src = np.array([[self.src_pts_1x, self.src_pts_1y], 
                             [self.src_pts_2x, self.src_pts_2y], 
                             [self.src_pts_3x, self.src_pts_3y],
                             [self.src_pts_4x, self.src_pts_4y]])
 
+        # map the selection into the correct size of the screen 640x360
         pts_dst = np.array([[0, 0],[639, 0],[0, 359],[639, 359]])
         hom, status = cv2.findHomography(pts_src, pts_dst)
         frame = cv2.warpPerspective(frame, hom, (640, 360))
 
-        
+        # arrange the homography points for depth image
         pts_src = np.array([[self.dp_pts_1x, self.dp_pts_1y], 
                             [self.dp_pts_2x, self.dp_pts_2y], 
                             [self.dp_pts_3x, self.dp_pts_3y],
                             [self.dp_pts_4x, self.dp_pts_4y]])
 
+        # map the selection into the correct size of the screen 640x360
         pts_dst = np.array([[0, 0],[639, 0],[0, 359],[639, 359]])
         hom, status = cv2.findHomography(pts_src, pts_dst)
         depth = cv2.warpPerspective(depth, hom, (640, 360))
-        # OLD PERSPECTIVE CORRECTION
-        # translate for alignment
-        # frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
-        # frame = cv2.warpAffine(frame, frame_M, (640, 360))
-        # depth_M = np.float32([[1,0,self.depth_hori-640],[0,1,self.depth_vert-360]])
-        # depth = cv2.warpAffine(depth, depth_M, (640, 360))
 
-        # # SCALE the depth camera to fit the shapes
-        # dsz = self.depth_scale/100
-        # depth = cv2.resize(depth, (0,0), fx=dsz, fy=dsz)
-        # dh, dw = depth.shape
-        # tb = 640-dw
-        # lr = 360-dh
-        # depth = cv2.copyMakeBorder(depth, tb, tb, lr, lr, cv2.BORDER_CONSTANT)
-        # # frame = cv2.copyMakeBorder(frame, 640-dw, 640-dw, 360-dh, 360-dh, cv2.BORDER_CONSTANT)
+                # OLD PERSPECTIVE CORRECTION
+                # translate for alignment
+                # frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
+                # frame = cv2.warpAffine(frame, frame_M, (640, 360))
+                # depth_M = np.float32([[1,0,self.depth_hori-640],[0,1,self.depth_vert-360]])
+                # depth = cv2.warpAffine(depth, depth_M, (640, 360))
 
-        # # crop back to size before rescale
-        # frame = frame[0:360, 0:640]
-        # topbot = int(tb/2)
-        # depth = depth[topbot:360+topbot, 0:640]
+                # # SCALE the depth camera to fit the shapes
+                # dsz = self.depth_scale/100
+                # depth = cv2.resize(depth, (0,0), fx=dsz, fy=dsz)
+                # dh, dw = depth.shape
+                # tb = 640-dw
+                # lr = 360-dh
+                # depth = cv2.copyMakeBorder(depth, tb, tb, lr, lr, cv2.BORDER_CONSTANT)
+                # # frame = cv2.copyMakeBorder(frame, 640-dw, 640-dw, 360-dh, 360-dh, cv2.BORDER_CONSTANT)
 
-        # print(depth.shape)
+                # # crop back to size before rescale
+                # frame = frame[0:360, 0:640]
+                # topbot = int(tb/2)
+                # depth = depth[topbot:360+topbot, 0:640]
 
-        # resize smaller for faster processing
+                # print(depth.shape)
+
+
+        # RESIZE SMALLER FOR FASTER PROCESSING
         # small = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
         small_depth = cv2.resize(depth, (0, 0), fx=sz, fy=sz)
         small = cv2.resize(frame, (0, 0), fx=sz, fy=sz)
         # small = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
         
-
         self.l_frame = small
         if not bw:
             return small
         if sm_dp:
             return small_depth
-        # grayscale image, alreay gray if kinect
+        # grayscale image is pseye, alreay gray if kinect
         # gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+
         # blur a small amount to smooth
         blur_depth = cv2.blur(small_depth, (2, 2))
+        
         # threshold the image
-        # otsu threshold is adaptive
-        #   so will adjust to the range present in the image
+        # otsu threshold is adaptive so will adjust to the range present in the image
         ret, thr = cv2.threshold(blur_depth, 1, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
         # opening and dilating to remove noise
         # kernel size is size of operation
         kernel = np.ones((1, 1), np.uint8)
         opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=1)
         bg = cv2.dilate(opening, kernel, iterations=5)
+
+        # return the processed depth image as bg
         return bg
 
 
     # KINECT CONTROLS
     def kinect_change_threshold(self, value):
+        # GUI FUNCTION FOR CHANGING THRESHOLD
         self.kinect_threshold = value
 
     def kinect_change_depth(self, value):
+        # GUI FUNCTION FOR CHANGING DEPTH
         self.kinect_current_depth = value
 
 
@@ -227,7 +231,6 @@ class LabyrinthMaker():
 
         # or this
         # https://github.com/amiller/libfreenect-goodies/blob/master/calibkinect.py
-        
 
         # filter depth range
         depth = 255 * np.logical_and(depth >= self.kinect_current_depth - self.kinect_threshold,
@@ -244,76 +247,67 @@ class LabyrinthMaker():
         return frame_convert2.video_cv(img)
 
 
-    # SLIDER FUNCTIONS
-
+    # GUI SLIDER FUNCTIONS
     def change_saturation(self, value):
         self.saturation = value
-
     def change_rgb_hori(self, value):
         self.rgb_hori = value
-
     def change_rgb_vert(self, value):
         self.rgb_vert = value
-
-
     def change_depth_hori(self, value):
         self.depth_hori = value
-
     def change_depth_vert(self, value):
         self.depth_vert = value
-
     def change_depth_scale(self, value):
         self.depth_scale = value
-
     def change_colour_mode(self, value):
         self.colour_mode = value
 
-
+    # GUI FUNCTION FOR RGB HOMOGRAPHY
     def change_1x(self, value):
         self.src_pts_1x = value    
     def change_1y(self, value):
         self.src_pts_1y = value
-
     def change_2x(self, value):
-        self.src_pts_2x = value    
+        self.src_pts_2x = value 
     def change_2y(self, value):
         self.src_pts_2y = value
-
     def change_3x(self, value):
         self.src_pts_3x = value    
     def change_3y(self, value):
         self.src_pts_3y = value
-
     def change_4x(self, value):
         self.src_pts_4x = value    
     def change_4y(self, value):
         self.src_pts_4y = value
 
 
-
+    # GUI FUNCTION FOR DEPTH HOMOGRAPHY
     def change_dp1x(self, value):
         self.dp_pts_1x = value    
     def change_dp1y(self, value):
         self.dp_pts_1y = value
-
     def change_dp2x(self, value):
         self.dp_pts_2x = value    
     def change_dp2y(self, value):
         self.dp_pts_2y = value
-
     def change_dp3x(self, value):
         self.dp_pts_3x = value    
     def change_dp3y(self, value):
         self.dp_pts_3y = value
-
     def change_dp4x(self, value):
         self.dp_pts_4x = value    
     def change_dp4y(self, value):
         self.dp_pts_4y = value
 
-    # KINECT CONTROLS GUI
+
+    # CONTROLS GUI
     def draw_gui(self):  
+        # create a cv window so we can use cv sliders
         cv2.namedWindow("gui")
+
+        # add all the sliders to the window
+
         cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 900, self.kinect_change_threshold)
         cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
         # cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
@@ -344,9 +338,11 @@ class LabyrinthMaker():
         cv2.createTrackbar('dp_pts_4y', 'gui', self.dp_pts_4y, 479, self.change_dp4y)
 
 
+
     # DRAW CAMERA IMAGE
     def draw_cam(self):
-        # draws the camera to a second window
+        # draws the camera to a separate window
+        # useful for setup & debug
         bg = self.process_cam(0.5, 0, bw=False)
         cv2.namedWindow("camera")
         # cv2.moveWindow("camera", 0, 0)
@@ -354,15 +350,17 @@ class LabyrinthMaker():
 
     # DRAW DEPTH IMAGE
     def draw_depth(self):
-        # draws the camera to a second window
+        # draws the camera to a separate window
+        # useful for setup & debug
         bg = self.process_cam(0.5, 0, bw=True, sm_dp=True)
         cv2.namedWindow("depth")
         cv2.imshow("depth", bg)
 
-    # DRAW THE IMAGE COLOURS TO THE GL BUFFER
-    def draw_mask(self):   
-        if self.mask is not None:
 
+    def draw_mask(self):   
+        # DRAW THE IMAGE COLOURS TO THE GL BUFFER
+        if self.mask is not None:
+            # CAN MAKE THE COLOURS MORE INTENSE WITH THIS
             # saturate
             # l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
             # h, s, v = cv2.split(l_frame_hsv)
@@ -371,26 +369,30 @@ class LabyrinthMaker():
             # l_frame_hsv = cv2.merge([h, s, v])
             # self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
 
-            # Blur the camera image 
+            # BLUR THE CAMERA IMAGE SO IT SINKS INTO THE BACKGROUND BEHIND THE LABYRINTH
             self.l_frame = cv2.blur(self.l_frame, (int(self.point_size/2), int(self.point_size/2)))
 
             # glPointSize(13.333*2)   
+            # set the size of the point
             glPointSize(self.point_size)
             glBegin(GL_POINTS)
+            # for each row and colour,
             for r in range(self.mask.rows):
                 for c in range(self.mask.columns):
+                    # if there isnt a cell (so no labyrinth here, empty space)
                     if not self.mask.cell_at(r, c):
                         try:
+                            # get the color of the corresponding pixel in the rgb image
                             bb, gg, rr = self.l_frame[r, c]
-
+                            # set the gl fill color (which uses 0 to 1 so divide by 255)
                             glColor3f(rr/255, gg/255, bb/255)
+                            # draw a point in that colour at this position
                             # offsetby 0.5 to fit colours inside mask
                             glVertex2f((c+0.5)*(self.point_size), (r+0.5)*(self.point_size))
-                            # glVertex2f((c+0.5)*(13.333*2), (r+0.5)*(13.333*2))
-                            # bb, gg, rr = self.l_frame[r+1, c+1]
-                            # glColor3f(rr/255, gg/255, bb/255)
-                            # glVertex2f(c*13.333+12, r*13.333+12)
-                        except Exception as e:
+                        except Exception as e: 
+                            # or skip the position and print an error, 
+                            # this is useful if the image sometimes is the wrong
+                            # size so that it doesnt crash the whole program
                             print(e)
                             pass
 
@@ -457,8 +459,8 @@ class LabyrinthMaker():
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
 
-                # TODO: PERHAPS CULD PUT SOME KIND OF BACKGROUND SUBTRACTION HERE ??
-                # SOLVED: USE KINECT AND THRESHOLD ON DISTANCE TO REMOVE BG
+                # TODO: PERHAPS CULD PUT SOME KIND OF BACKGROUND SUBTRACTION HERE?
+                # SOLVED: USE KINECT THRESHOLD INSTEAD SEE: self.kinect_get_depth()
 
                 # make a mask from the image
                 self.mask = Mask.from_img_data(pil_im)
@@ -478,18 +480,31 @@ class LabyrinthMaker():
 
     # SAVING IMAGES OF FRAMES OR TO VIDEO CAPTURE
     def save_frame(self):
+        # read the buffer
         glReadBuffer(GL_BACK)
         fbuffer = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
+        # make numpy array from buffer string
         imagebuffer = np.fromstring(fbuffer, np.uint8)
+        # reshape numpy to rgb image
         fimage = imagebuffer.reshape(self.height, self.width, 3)
+
+        # SAVE IMAGE FRAME
+        # use PIL to make image objects to access save function
         image = Image.fromarray(fimage)
+        # save the image with frame number
         image.save("video_out/frames/live/%s.png" % self.f_num, 'png')
+
+        # PUSH FRAME TO VIDEO 
+        # translate the image colorspace for cv
         outim = cv2.cvtColor(fimage, cv2.COLOR_RGB2BGR)
+        # add to the cv video out 
         self.out.write(outim)
 
 
     # THE GL DRAW LOOP
     def draw(self):
+        # every 1500 frames switch coloring
+        # arbitrary time, just so its noticeable to people
         if self.f_num % 1500 == 0:
             self.f_num = 0
             if self.colour_mode == 0:
@@ -497,53 +512,76 @@ class LabyrinthMaker():
             else:
                 self.colour_mode = 0
 
+        # clear color (background)
         if self.colour_mode == 0:
             glClearColor(0.0, 0.0, 0.0, 1)
         else:
             glClearColor(1.0, 1.0, 1.0, 1)
-    
+        
+
+        # refresh gl
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         self.refresh_scene()
+
+        # update the labyrinth
         self.update()
+
+        # draw to gl
         self.draw_mask()
         self.draw_laby()
+
+        # save image/ video
         # self.save_frame()
-        # self.draw_cam()
-        # self.draw_depth()
-        # self.draw_gui()
+
+        # show extra windows and sliders if in debug mode
+        if self.mode == "DEBUG":
+            self.draw_cam()
+            self.draw_depth()
+            self.draw_gui()
+
+        # increment counter
         self.f_num = self.f_num + 1
+
+
 
     # MAKE GLFW WINDOW AND START THE LOOP
     def main(self):
         if not glfw.init():
+            # failed to init so leave
             return
-        # http://www.glfw.org/docs/latest/monitor_guide.html#monitor_monitors
-        # monitor = glfw.get_primary_monitor()
-        # mode = monitor.video_mode
 
+        # get a list of monitors as we want the second one
         monitors = glfw.get_monitors()
-        # print(monitors)
-
+        
+        # make a new window that fills the second screen
         window = glfw.create_window(self.width, self.height, "LabyrinthMaker_GLFW", monitors[1], None)
 
         if not window:
+            # if it failed the leave
             glfw.terminate()
             return
+
+        # set focus on the window
         glfw.make_context_current(window)
 
+        # until we say exit keep runnning this 
         while not glfw.window_should_close(window):
             # set cursor position because of remote login
             # as this runs all the time mouse is essentially dead
             # so youll have to 'killall python' to get out
             glfw.set_cursor_pos(window, 2000, 0)
-            # render
+
+            # run the draw loop
             self.draw()
+            # update gl things in the window
             glfw.swap_buffers(window)
             glfw.poll_events()
+        # kill gl
         glfw.terminate()
 
-# init labyrinth
+
+# init the labyrinth maker objects
 labyrinth = LabyrinthMaker()
-# start the whole thing up
+# start the whole thing running!
 labyrinth.main()
