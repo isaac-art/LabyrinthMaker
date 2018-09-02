@@ -5,6 +5,8 @@ import numpy as np
 # 
 #  FREENECT NUMPY CONVERSIONS
 # 
+#  THIS IS A FREENECT HELPER FILE
+# 
 # 
 
 def pretty_depth(depth):
