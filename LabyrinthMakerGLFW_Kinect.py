@@ -58,7 +58,7 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 628
+        self.kinect_threshold = 630
         self.kinect_current_depth = 0
     
         # image translation
@@ -73,23 +73,23 @@ class LabyrinthMaker():
 
         # HOMOGRAPHY POSTIONS RGB
         self.src_pts_1x = 0
-        self.src_pts_1y = 67
-        self.src_pts_2x = 605
-        self.src_pts_2y = 72
-        self.src_pts_3x = 14
-        self.src_pts_3y = 398
-        self.src_pts_4x = 594
-        self.src_pts_4y = 396
+        self.src_pts_1y = 72
+        self.src_pts_2x = 599
+        self.src_pts_2y = 76
+        self.src_pts_3x = 0
+        self.src_pts_3y = 403
+        self.src_pts_4x = 585
+        self.src_pts_4y = 403
 
         # HOMOGRAPHY POSTIONS DEPTH
         self.dp_pts_1x = 0 
-        self.dp_pts_1y = 81
-        self.dp_pts_2x = 639
-        self.dp_pts_2y = 67
+        self.dp_pts_1y = 87
+        self.dp_pts_2x = 622
+        self.dp_pts_2y = 69
         self.dp_pts_3x = 0
-        self.dp_pts_3y = 463
+        self.dp_pts_3y = 447
         self.dp_pts_4x = 639
-        self.dp_pts_4y = 467
+        self.dp_pts_4y = 456
 
 
     # PROCESS THE CAMERA INPUT
@@ -454,7 +454,7 @@ class LabyrinthMaker():
             # compare to the last stored average
             diff = average - self.l_average
             # if there is a big enough difference +/-
-            if diff > 0.65 or diff < -0.65:
+            if diff > 0.55 or diff < -0.55:
             # if True:
                 # translate numpy array to PIL image
                 pil_im = Image.fromarray(bg)
@@ -570,7 +570,8 @@ class LabyrinthMaker():
             # set cursor position because of remote login
             # as this runs all the time mouse is essentially dead
             # so youll have to 'killall python' to get out
-            glfw.set_cursor_pos(window, 2000, 0)
+            if self.mode != "DEBUG":
+                glfw.set_cursor_pos(window, 2000, 0)
 
             # run the draw loop
             self.draw()
