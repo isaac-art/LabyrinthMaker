@@ -12,6 +12,14 @@ from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
+# 
+# THIS IS AN EARLIER VERSION SHOWING A CAMERA BASED
+# BUT STILL LABYRINTH.
+# IT OPENS CAMERA AND SAVES TO A FILE
+# VERY SIMILAR TO sender.py and OneTile.py 
+# and influence the final LabyrinthMakerGLFW_Kinect.py
+# and LabyrinthMakerVideoIn.py
+
 class StillLabyrinthMaker():
     """StillLabyrinthMaker"""
     def __init__(self):

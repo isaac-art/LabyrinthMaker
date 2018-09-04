@@ -1,5 +1,4 @@
-im
-//    Cell *start = g->rand_cell();port os
+import os
 import sys
 import time
 import cv2
@@ -12,16 +11,29 @@ from tomorrow import threads
 from skimage.measure import compare_ssim
 from datetime import datetime
 
+# 
+# This is an earlier version of the program
+# when i was still making large still images
+# for prints
+# 
+
+
+# use multithreading to process multiple sections of the
+# image simultaneously, makes it faster!
 @threads(20)
 def callTile(path):
+    # call the OneTile script
     OneTile.main(path, "live_mz")
     return
 
 
 def maze(width, height, sz):
+    # for each area of variable size across the image
     for x in range(width // sz):
         for y in range(height // sz):
+            # image name
             lab = "live_cv/x%s_y%s.png" % (x, y)
+            # process it
             callTile(lab)
             y += sz
         x += sz
@@ -29,6 +41,7 @@ def maze(width, height, sz):
 
 
 def save_seg(seg, lab):
+    # try save the image and if it fails skip it
     try:
         cv2.imwrite(lab, seg)
     except Exception as e:
@@ -53,6 +66,12 @@ def save(width, height, sz, bg):
 
 
 def detect_diffs(vals, c, width, height, sz, bg):
+    # detect differces in the sturctual similarity
+
+    # this allows us to only update sections of the image
+    # that have changed! rather than processing everything 
+    # every single frame
+
     for x in range(width // sz):
         for y in range(height // sz):
             lab = "live_cv/x%s_y%s.png" % (x, y)
@@ -83,25 +102,35 @@ def detect_diffs(vals, c, width, height, sz, bg):
 
 
 def main(cam, show):
+    # get camera from args
     cap = cv2.VideoCapture(cam)
+    # get size of image
     width = floor(cap.get(3)) // 2
     height = floor(cap.get(4)) // 2
+    # variables
     sz = 100
     run = True
     vals = {}
     c = 0
+    # is there a window, faster without
     if show == 0:
         window = False
     else:
         window = True
+
+    # While loop runs
     while(run):
+        # get the frame
         ret, frame = cap.read()
+        # applu transformations, see LabyrinthMakerGLFW_Kinect.py for
+        # full explanations
         small = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
         gray = cv2.cvtColor(small,cv2.COLOR_BGR2GRAY)
         ret, thr = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         kernel = np.ones((2, 2), np.uint8)
         opening = cv2.morphologyEx(thr, cv2.MORPH_OPEN, kernel, iterations=2)
         bg = cv2.dilate(opening, kernel, iterations=3)
+
         if window:
             cv2.imshow('a', bg)
         # if (c % 20) == 0:
@@ -111,7 +140,7 @@ def main(cam, show):
         if k == ord('q'):
             run = False
         c += 1
-
+    # close camera and quit
     cap.release()
     cv2.destroyAllWindows()
 

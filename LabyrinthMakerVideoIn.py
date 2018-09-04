@@ -12,6 +12,14 @@ from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
+# 
+# THIS IS A VERSION OF THE LABYRINTH MAKER
+# WHICH READS FROM AND WRITES TO A VIDEO FILE
+# 
+# ITS VERY SIMILAR TO THE KINECT VERSION BUT WITHOUT ANY DEPTH
+# IMAGE COMPARISONS.
+# 
+
 class LabyrinthMaker():
     """LabyrinthMaker"""
     def __init__(self):
@@ -32,8 +40,12 @@ class LabyrinthMaker():
         self.f_num = 0
         # camera and output video 
         # self.cap = Camera([0], fps=30, resolution=Camera.RES_LARGE, colour=True, auto_gain=True, auto_exposure=True, auto_whitebalance=True)
+
+        # SOURCE VIDEO
         self.cap = cv2.VideoCapture("video_in/TheDead.mkv")
+        # Compression format
         self.fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        # EXPORT VIDEO
         self.out = cv2.VideoWriter('video_out/bb.avi', self.fourcc, 20.0, (self.width,self.height))
 
 
@@ -82,12 +94,12 @@ class LabyrinthMaker():
     def draw_mask(self):   
         if self.mask is not None:
             # saturate 
-            l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
-            h, s, v = cv2.split(l_frame_hsv)
-            s = s * 5
-            s = np.clip(s, 0, 255)
-            l_frame_hsv = cv2.merge([h, s, v])
-            self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
+            # l_frame_hsv = cv2.cvtColor(self.l_frame, cv2.COLOR_BGR2HSV).astype("float32")
+            # h, s, v = cv2.split(l_frame_hsv)
+            # s = s * 5
+            # s = np.clip(s, 0, 255)
+            # l_frame_hsv = cv2.merge([h, s, v])
+            # self.l_frame = cv2.cvtColor(l_frame_hsv.astype("uint8"), cv2.COLOR_HSV2BGR) 
 
             # Blur the camera image 
             self.l_frame = cv2.blur(self.l_frame, (12, 12))

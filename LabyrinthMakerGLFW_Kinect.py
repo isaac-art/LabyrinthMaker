@@ -13,17 +13,61 @@ from MaskedGrid import MaskedGrid
 from RecursiveBacktracker import RecursiveBacktracker
 
 
+#  _           _                _       _   _     __  __       _             
+# | |         | |              (_)     | | | |   |  \/  |     | |            
+# | |     __ _| |__  _   _ _ __ _ _ __ | |_| |__ | \  / | __ _| | _____ _ __ 
+# | |    / _` | '_ \| | | | '__| | '_ \| __| '_ \| |\/| |/ _` | |/ / _ | '__|
+# | |___| (_| | |_) | |_| | |  | | | | | |_| | | | |  | | (_| |   |  __| |   
+# |______\__,_|_.__/ \__, |_|  |_|_| |_|\__|_| |_|_|  |_|\__,_|_|\_\___|_|   
+#                     __/ |                                                  
+#                    |___/                                                   
+# LABYRINTHMAKER 
+# KINECT OPENGL VERSION!
+# ISAAC CLARKE
+# 2018
+
+# **************************************************
+# **************************************************
+
+# REQUIREMENTS
+# Python3 (tested on 3.5.4)
+# KINECT v1 MODEL 1414
+# An external monitor (attemps to run on disply 2, will die if not there)
+# libfreenect, numpy, pseyepy, OpenGl, OpenCV, GLFW, Pillow
+
+# REFERENCES
+# BUCK, J. (2015) MAZES FOR PROGRAMMERS. Pragmatic Bookshelf
+# Cannon, M. (2011) Carcanet Press. London.
+# Borges, J.L. (1962) Labyrinths. New Directions.
+# Joyce, J (1914) The Dead. Grant Richards Ltd.
+
+# LIBRARIES
+# NumPy (2006). http://www.numpy.org/
+# OpenCV (2000) The OpenCV Library. https://opencv.org/
+# libfreenect (2010) OpenKinect. https://github.com/OpenKinect/libfreenect
+# Graphics Library Framework GLFW (2006). glfw.org
+# OpenGL (2006) Khronos Group. https://www.opengl.org/
+# pseyepy (2017) bensondaled. https://github.com/bensondaled/pseyepy
+# Python Imaging Library (2009) Secret Labs AB. http://www.pythonware.com/products/pil/
+
+
+# **************************************************
+# **************************************************
+
+# THIS IS THE MAIN SCRIPT FOR MY INSTALLATION.
 
 # HERE WE CREATE A LABYRINTH MAKER OBJECT
 # AND SET UP A DRAW AND UPDATE LOOP.
 
 # WE PROCESS KINECT DEPTH IMAGES USING OPEN CV
-# AND THEN SEND IT TO OUR MAZE MAKING SCRIPTS 
-# AS A MASK WHICH IS USED FOR GENERATING A LABYRINTH
+# AND THEN SEND IT TO OUR MAZE MAKING SCRIPTS AS 
+# A MASK WHICH IS USED FOR GENERATING A LABYRINTH.
+
 # THIS IS DRAWN USING OPENGL, AND USES THE
 # KINECT RGB IMAGE COLOURS AS FILL. 
 
-
+# **************************************************
+# **************************************************
 
 class LabyrinthMaker():
     """LabyrinthMaker"""
@@ -58,7 +102,7 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 630
+        self.kinect_threshold = 627
         self.kinect_current_depth = 0
     
         # image translation
@@ -73,23 +117,23 @@ class LabyrinthMaker():
 
         # HOMOGRAPHY POSTIONS RGB
         self.src_pts_1x = 0
-        self.src_pts_1y = 72
-        self.src_pts_2x = 599
-        self.src_pts_2y = 76
+        self.src_pts_1y = 81
+        self.src_pts_2x = 598
+        self.src_pts_2y = 69
         self.src_pts_3x = 0
-        self.src_pts_3y = 403
-        self.src_pts_4x = 585
-        self.src_pts_4y = 403
+        self.src_pts_3y = 419
+        self.src_pts_4x = 600
+        self.src_pts_4y = 396
 
         # HOMOGRAPHY POSTIONS DEPTH
         self.dp_pts_1x = 0 
-        self.dp_pts_1y = 87
-        self.dp_pts_2x = 622
-        self.dp_pts_2y = 69
+        self.dp_pts_1y = 80
+        self.dp_pts_2x = 639
+        self.dp_pts_2y = 74
         self.dp_pts_3x = 0
-        self.dp_pts_3y = 447
+        self.dp_pts_3y = 479
         self.dp_pts_4x = 639
-        self.dp_pts_4y = 456
+        self.dp_pts_4y = 479
 
 
     # PROCESS THE CAMERA INPUT
@@ -105,11 +149,13 @@ class LabyrinthMaker():
 
         
         # UNDISTORT THE CAMERA LENSES
-        # SEE calibrate.py to get these values
+        # SEE calibrate.py to calculate these values
+
+        # Matrix is the intrinsic distortion in the lens
         rgb_camera_matrix = np.array([[5.204374709026797063e+02, 0.0, 3.204917591290805490e+02],
                             [0.0, 5.212435824690201116e+02, 2.679794167451566977e+02], 
                             [0.0, 0.0, 1.0]])
-
+        # Distortion coefficiants are the variable distortions 
         rgb_dist_coeffs = np.array([[2.145478879452796250e-01, -7.239723873811023669e-01, -3.261886134846941855e-04, 8.164634327370430501e-04, 8.526327834328302213e-01]])
 
         depth_camera_matrix = np.array([[5.8818670481438744e+02, 0.0, 3.1076280589210484e+02], 
@@ -125,6 +171,8 @@ class LabyrinthMaker():
         depth_undistorted = cv2.undistort(depth, depth_camera_matrix, depth_dist_coeffs, None, depth_camera_matrix)
 
         # crop to correct ratio 16:9 for the monitor
+        # not neccessary anymore as i am using homography below
+        # to map into the sizes we want more accuratly
         # frame = rgb_undistorted[0:360, 0:640]
         # depth = depth_undistorted[0:360, 0:640]
 
@@ -156,6 +204,8 @@ class LabyrinthMaker():
         depth = cv2.warpPerspective(depth, hom, (640, 360))
 
                 # OLD PERSPECTIVE CORRECTION
+                # Keeping this here for reference
+
                 # translate for alignment
                 # frame_M = np.float32([[1,0,self.rgb_hori-640],[0,1,self.rgb_vert-360]])
                 # frame = cv2.warpAffine(frame, frame_M, (640, 360))
@@ -225,19 +275,12 @@ class LabyrinthMaker():
         # timestamp: int representing the time
         depth, timestamp = freenect.sync_get_depth()
 
-        # https://stackoverflow.com/questions/23901220/how-do-i-get-kinect-depth-image-data-in-centimeters-using-the-libfreenect-python
-        # freenect.set_depth_mode(mdev, freenect.RESOLUTION_MEDIUM, freenect.DEPTH_REGISTERED)
-        # something to do with this?
-
-        # or this
-        # https://github.com/amiller/libfreenect-goodies/blob/master/calibkinect.py
-
-        # filter depth range
+        # filter depth range ( how far and near do we want to see)
         depth = 255 * np.logical_and(depth >= self.kinect_current_depth - self.kinect_threshold,
                                      depth <= self.kinect_current_depth + self.kinect_threshold)
-        # convert to 8bit
+        # convert to 8bit numpy list
         depth = depth.astype(np.uint8)
-        # return image
+        # return 
         return depth
 
     def kinect_get_image(self):
@@ -310,13 +353,6 @@ class LabyrinthMaker():
 
         cv2.createTrackbar('threshold', 'gui', self.kinect_threshold, 900, self.kinect_change_threshold)
         cv2.createTrackbar('depth', 'gui', self.kinect_current_depth, 2048, self.kinect_change_depth)
-        # cv2.createTrackbar('rgb-hori', 'gui', self.rgb_hori, 640*2, self.change_rgb_hori)
-        # cv2.createTrackbar('rgb-vert', 'gui', self.rgb_vert, 360*2, self.change_rgb_vert)
-        # cv2.createTrackbar('depth-hori', 'gui', self.depth_hori, 640*2, self.change_depth_hori)
-        # cv2.createTrackbar('depth-vert', 'gui', self.depth_vert, 360*2, self.change_depth_vert)
-        # cv2.createTrackbar('depth-scale', 'gui', self.depth_scale, 100, self.change_depth_scale)
-        # # cv2.createTrackbar('saturation', 'gui', 5, 10, self.change_saturation)
-        
         cv2.createTrackbar('colour-mode', 'gui', self.colour_mode, 1, self.change_colour_mode)
 
         cv2.createTrackbar('src_pts_1x', 'gui', self.src_pts_1x, 639, self.change_1x)

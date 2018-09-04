@@ -1,0 +1,4 @@
+# THIS IS THE BASH FOR CATCHING SCREENSHOTS
+# RUNNING IN A CRON JOB
+
+screencapture ~/Desktop/$(date +%Y%m%d-%H%M%S).png

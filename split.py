@@ -5,6 +5,13 @@ import cv2
 import numpy as np
 
 
+# 
+# This is an earlier helper file to be ran with stitch.py and sender.py
+# it can clear out the folders that get used a lot
+# and split the image into sections of varying size
+# 
+
+
 def save(lab, img):
     if not os.path.exists("split/"):
         os.makedirs("split/")
