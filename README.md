@@ -57,7 +57,7 @@ I have provided two examples, the sidewinder algorithm is incompatible as it doe
 
 ## 5 - ADDITIONAL FILES
 
-###LabyrinthMarkerVideoIn.py
+### LabyrinthMarkerVideoIn.py
 This is similar to the main file at the top of the list. But instead of a kinect this takes a video input and records to a video output. So you can use it as a video proceesing effect, where every frame is a labyrinth!
 
 ### saveTestImages.py
