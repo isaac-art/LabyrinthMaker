@@ -102,7 +102,7 @@ class LabyrinthMaker():
         self.point_size = 13.333
 
         # KINECT VALS
-        self.kinect_threshold = 627
+        self.kinect_threshold = 626
         self.kinect_current_depth = 0
     
         # image translation
@@ -117,21 +117,21 @@ class LabyrinthMaker():
 
         # HOMOGRAPHY POSTIONS RGB
         self.src_pts_1x = 0
-        self.src_pts_1y = 81
-        self.src_pts_2x = 598
-        self.src_pts_2y = 69
+        self.src_pts_1y = 90
+        self.src_pts_2x = 602
+        self.src_pts_2y = 81
         self.src_pts_3x = 0
-        self.src_pts_3y = 419
-        self.src_pts_4x = 600
-        self.src_pts_4y = 396
+        self.src_pts_3y = 424
+        self.src_pts_4x = 598
+        self.src_pts_4y = 422
 
         # HOMOGRAPHY POSTIONS DEPTH
         self.dp_pts_1x = 0 
-        self.dp_pts_1y = 80
-        self.dp_pts_2x = 639
-        self.dp_pts_2y = 74
+        self.dp_pts_1y = 100
+        self.dp_pts_2x = 637
+        self.dp_pts_2y = 83
         self.dp_pts_3x = 0
-        self.dp_pts_3y = 479
+        self.dp_pts_3y = 476
         self.dp_pts_4x = 639
         self.dp_pts_4y = 479
 

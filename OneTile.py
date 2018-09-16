@@ -17,12 +17,12 @@ def makeMaze(img_path, folder):
     # run the backtracker
     RecursiveBacktracker.on(grid)
     # get label from filename
-    split = img_path.split("/")
-    split_two = split[1].split(".")
-    label = split_two[0]
+    # split = img_path.split("/")
+    # split_two = split[1].split(".")
+    # label = split_two[0]
     # print(label)
     # genertae image
-    img = grid.to_png(cell_size=4, folder=folder, name=label, save=True)
+    img = grid.to_png(cell_size=16, folder="solved", name="img", save=True)
     # send the image back up
     return img
 
