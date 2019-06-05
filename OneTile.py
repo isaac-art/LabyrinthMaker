@@ -22,7 +22,7 @@ def makeMaze(img_path, folder):
     # label = split_two[0]
     # print(label)
     # genertae image
-    img = grid.to_png(cell_size=16, folder="solved", name="img", save=True)
+    img = grid.to_png_inset(cell_size=16, folder="nanogenmo", name="img", save=True)
     # send the image back up
     return img
 

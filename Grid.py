@@ -254,8 +254,8 @@ class Grid():
         img_wid = cell_size * self.columns
         img_hei = cell_size * self.rows
         inset = cell_size * inset
-        bg = (255, 255, 255)
-        wall = (56, 50, 38)
+        bg = (randrange(120, 255), randrange(120, 255), randrange(120, 255))
+        wall = (120,120,120)
         img = Image.new("RGBA", (img_wid + 1, img_hei + 1), bg)
         draw = ImageDraw.Draw(img)
 
@@ -271,6 +271,10 @@ class Grid():
             y2 = y1 + inset
             y3 = y4 - inset
             quart_cell = cell_size / 4
+
+
+            bg = (randrange(120, 255), randrange(120, 255), randrange(120, 255))
+            draw.rectangle((x1,y1,x4,y4), fill=bg)
 
 
             # MY ADDITIONS FOR ENTRANCE/EXIT
